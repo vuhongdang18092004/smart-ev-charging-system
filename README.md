@@ -32,6 +32,15 @@ The project consists of three main applications:
 * Spring Boot
 * PostgreSQL
 
+## Development Tools
+
+- Git & GitHub
+- Visual Studio Code
+- IntelliJ IDEA
+- Android Studio
+- Docker
+- Model Context Protocol (MCP)
+
 ## Project Structure
 
 ```text
