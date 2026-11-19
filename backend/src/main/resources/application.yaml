@@ -2,6 +2,17 @@ spring:
   application:
     name: backend
 
+  messages:
+    basename: text/messages
+
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+  data:
+    web:
+      pageable:
+        max-page-size: 100
+
   datasource:
     url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
     username: ${DB_USERNAME}
@@ -10,7 +21,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
@@ -20,3 +31,7 @@ dotenv:
   enabled: true
   directory: ./
   filename: .env
+
+app:
+  cors:
+    allowed-origins: "${FRONTEND_ALLOWED_ORIGINS:http://localhost:3000}"
