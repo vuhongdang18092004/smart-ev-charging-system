@@ -6,6 +6,7 @@ import com.smart.evcharging.backend.dto.response.*;
 import com.smart.evcharging.backend.service.StationService;
 import jakarta.validation.Valid;
 import java.util.UUID;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -49,11 +50,25 @@ public class StationController extends BaseController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/connectors")
-    public ResponseEntity<ApiResponse<ConnectorResponse>> addConnector(
-            @PathVariable UUID id, @Valid @RequestBody ConnectorRequest request) {
-        ConnectorResponse result = service.addConnector(id, request);
-        return created(ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/connectors/{id}")
+    @PostMapping("/{id}/images")
+    public ResponseEntity<ApiResponse<StationImageResponse>> addImage(
+            @PathVariable UUID id, @Valid @RequestBody StationImageRequest request) {
+        StationImageResponse result = service.addImage(id, request);
+        return created(ServletUriComponentsBuilder.fromCurrentRequest().path("/{imageId}")
                 .buildAndExpand(result.id()).toUri(), result);
+    }
+
+    @DeleteMapping("/{id}/images/{imageId}")
+    public ResponseEntity<Void> deleteImage(@PathVariable UUID id, @PathVariable UUID imageId) {
+        service.deleteImage(id, imageId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/connectors")
+    public ResponseEntity<ApiResponse<List<ConnectorResponse>>> addConnectors(
+            @PathVariable UUID id, @Valid @RequestBody CreateConnectorsRequest request) {
+        List<ConnectorResponse> result = service.addConnectors(id, request);
+        return created(ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/stations/{id}")
+                .buildAndExpand(id).toUri(), result);
     }
 }

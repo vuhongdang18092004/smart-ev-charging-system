@@ -21,6 +21,14 @@ export const COPY = {
   addBrand: "Thêm thương hiệu",
   addConnectorType: "Thêm loại đầu sạc",
   addOperator: "Thêm đơn vị vận hành",
+  editBrand: "Sửa thương hiệu",
+  editConnectorType: "Sửa loại đầu sạc",
+  editOperator: "Sửa đơn vị vận hành",
+  editCatalogItem: "Sửa",
+  allowedBrands: "Hãng cho phép",
+  noAllowedBrands: "Chưa chọn hãng",
+  noBrandsAvailable: "Chưa có thương hiệu để chọn.",
+  optionalPassword: "Để trống để giữ mật khẩu hiện tại.",
   addConnector: "Thêm đầu sạc",
   editConnector: "Sửa đầu sạc",
   removeRow: "Bỏ dòng",
@@ -50,7 +58,6 @@ export const COPY = {
   active: "Đang hoạt động",
   connectorType: "Loại đầu sạc",
   power: "Công suất (kW)",
-  quantity: "Số lượng",
   price: "Giá / kWh",
   actions: "Thao tác",
   select: "Chọn một mục",
@@ -88,6 +95,26 @@ export const COPY = {
 } as const;
 
 export const BRAND_TYPES = ["vehicle", "station", "both"] as const;
+export const CATALOG_DEFAULTS = {
+  brandType: "both",
+  operatorAccess: "unknown",
+  sortOrder: 0,
+} as const;
+export const OPERATOR_STATUSES = ["active", "banned", "pending"] as const;
+export const OPERATOR_ACCESS_SPECIFIC = "open_to_specific";
+export const CATALOG_LIMITS = {
+  name: 100,
+  url: 500,
+  code: 20,
+  email: 255,
+  passwordMin: 8,
+  passwordBytes: 72,
+  intMin: -2_147_483_648,
+} as const;
+export const CONNECTOR_ACTIVITY = {
+  active: "active",
+  inactive: "inactive",
+} as const;
 export const CURRENT_TYPES = ["AC", "DC"] as const;
 export const OPERATOR_ACCESS = [
   "open_to_all",
@@ -117,6 +144,9 @@ export const VALUE_LABELS = {
   open: "Đang mở",
   temporarily_closed: "Tạm đóng",
   maintenance: "Bảo trì",
+  active: "Đang hoạt động",
+  banned: "Bị khóa",
+  pending: "Đang chờ",
 } as const;
 
 export const FIELD_LABELS: Readonly<Record<string, string>> = {
@@ -127,6 +157,8 @@ export const FIELD_LABELS: Readonly<Record<string, string>> = {
   code: COPY.code,
   current_type: COPY.currentType,
   sort_order: COPY.sortOrder,
+  is_active: COPY.active,
+  brandIds: COPY.allowedBrands,
   email: COPY.email,
   password: COPY.password,
   access_type: COPY.access,
@@ -142,7 +174,6 @@ export const FIELD_LABELS: Readonly<Record<string, string>> = {
   source_url: COPY.source,
   connector_type_id: COPY.connectorType,
   power_kw: COPY.power,
-  quantity: COPY.quantity,
   price_per_kwh: COPY.price,
 };
 
@@ -154,7 +185,5 @@ export const ROUTES = {
 } as const;
 export const STATION_PAGE_SIZE = 10;
 export const STATION_DEFAULTS = { status: "open", access: "inherit" } as const;
-export const CONNECTOR_DEFAULT_QUANTITY = 1;
-export const COORDINATE_DECIMALS = 7;
 export const TIME_PLACEHOLDER = "HH:mm";
 export const TIME_MAX_LENGTH = "HH:mm:ss.ffffff".length;

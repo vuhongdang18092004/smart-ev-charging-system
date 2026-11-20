@@ -6,6 +6,6 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.*;
 
 public interface OperatorProfileRepository extends JpaRepository<OperatorProfile, UUID> {
-    @EntityGraph(attributePaths = "user")
+    @EntityGraph(attributePaths = {"user", "user.allowedBrands"})
     List<OperatorProfile> findByUserRoleAndUserDeletedAtIsNullOrderByUserNameAsc(String role);
 }

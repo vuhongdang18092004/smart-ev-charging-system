@@ -22,8 +22,11 @@ public class Connector extends BaseTrackedEntity {
     @Column(name = "power_kw", precision = 6, scale = 2)
     private BigDecimal powerKw;
 
-    @Column(nullable = false)
-    private Integer quantity;
+    @Column(length = 50)
+    private String code;
+
+    @Column(nullable = false, length = 20)
+    private String status;
 
     @Column(name = "price_per_kwh", precision = 10, scale = 2)
     private BigDecimal pricePerKwh;

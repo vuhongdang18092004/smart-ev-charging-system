@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import type { ResourceState } from "@/types/management-ui";
 
-export function useResource<T>(load: (signal: AbortSignal) => Promise<T>) {
+export function useResource<T>(
+  load: (signal: AbortSignal) => Promise<T>,
+  keepPreviousData = false,
+) {
   const [revision, setRevision] = useState(0);
   const [result, setResult] = useState<ResourceState<T>>();
   const current =
@@ -23,7 +26,8 @@ export function useResource<T>(load: (signal: AbortSignal) => Promise<T>) {
   }, [load, revision]);
 
   return {
-    data: current?.data,
+    data:
+      keepPreviousData && result?.load === load ? result.data : current?.data,
     error: current?.error,
     loading: !current,
     refresh: () => setRevision((value) => value + 1),

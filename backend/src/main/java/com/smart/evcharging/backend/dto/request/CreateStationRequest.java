@@ -6,5 +6,6 @@ import java.util.List;
 
 public record CreateStationRequest(
         @NotNull @Valid StationRequest station,
-        List<@NotNull @Valid ConnectorRequest> connectors
+        List<@NotNull @Valid CreateConnectorsRequest> connectors,
+        List<@NotNull @Valid StationImageRequest> images
 ) {}

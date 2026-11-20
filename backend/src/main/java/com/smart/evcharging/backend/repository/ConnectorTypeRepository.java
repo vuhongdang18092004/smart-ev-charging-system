@@ -7,4 +7,5 @@ import org.springframework.data.jpa.repository.*;
 
 public interface ConnectorTypeRepository extends JpaRepository<ConnectorType, UUID> {
     List<ConnectorType> findAllByOrderBySortOrderAscNameAsc();
+    boolean existsByCodeAndIdNot(String code, UUID id);
 }

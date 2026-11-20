@@ -1,11 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { BaseButton } from "@/components/base/base-button";
 import { BaseInput } from "@/components/base/base-input";
 import { BaseSelect } from "@/components/base/base-select";
 import {
-  COORDINATE_DECIMALS,
   COPY,
   STATION_ACCESS,
   STATION_DEFAULTS,
@@ -13,16 +12,27 @@ import {
   TIME_MAX_LENGTH,
   TIME_PLACEHOLDER,
 } from "@/constants/management";
+import {
+  DEFAULT_PARKING_FEE,
+  DEFAULT_STATION_LOCATION,
+  LOCATION_TYPES,
+  PARKING_FEE_TYPES,
+  STATION_MEDIA_COPY,
+} from "@/constants/station-media";
+import { useDynamicRows } from "@/hooks/use-dynamic-rows";
 import { createStationSchema, stationSchema } from "@/schemas/management";
 import { createStation, updateStation } from "@/services/station-service";
 import type { StationFormProps } from "@/types/management-ui";
+import type { StationImage } from "@/types/management";
+import { readPrefixedFields } from "@/utils/dynamic-fields";
 import { namedOptions, valueOptions } from "@/utils/management-options";
+import { stationImagesChanged } from "@/utils/station-media";
 import { ConnectorFields } from "../connectors/connector-fields";
 import { ManagedForm } from "../management/managed-form";
+import { StationImageFields } from "./station-image-fields";
 
 const connectorPrefix = (row: number) => `connector-${row}-`;
-const formatCoordinate = (value?: number) =>
-  value?.toFixed(COORDINATE_DECIMALS).replace(/\.?0+$/, "") ?? "";
+const imagePrefix = (row: number) => `image-${row}-`;
 
 export function StationForm({
   station,
@@ -31,29 +41,44 @@ export function StationForm({
   types,
   onSuccess,
 }: StationFormProps) {
-  const [rows, setRows] = useState<number[]>([]);
-  const nextRow = useRef(0);
+  const initialImages = station?.images ?? [];
+  const imageRows = useDynamicRows<StationImage | undefined>(initialImages);
+  const connectors = useDynamicRows<undefined>([]);
+  const [primaryImage, setPrimaryImage] = useState(() =>
+    initialImages.findIndex((image) => image.is_primary),
+  );
+  const selectedPrimary =
+    imageRows.rows.find((row) => row.key === primaryImage)?.key ??
+    imageRows.rows[0]?.key;
 
   return (
     <ManagedForm
       onSuccess={onSuccess}
       submitLabel={station ? COPY.save : COPY.create}
       submit={async (form) => {
-        const fields = Object.fromEntries(form);
+        const images = imageRows.rows.map(({ key }) => ({
+          ...readPrefixedFields(form, imagePrefix(key)),
+          is_primary: selectedPrimary === key,
+        }));
+        const fields = { ...Object.fromEntries(form), images };
         if (station) {
-          await updateStation(station.id, stationSchema.parse(fields));
+          const { images: parsedImages, ...body } = stationSchema.parse(fields);
+          await updateStation(station.id, {
+            ...body,
+            images:
+              parsedImages && stationImagesChanged(initialImages, parsedImages)
+                ? parsedImages
+                : undefined,
+          });
           return;
         }
-        const connectors = rows.map((row) => {
-          const prefix = connectorPrefix(row);
-          return Object.fromEntries(
-            Object.entries(fields)
-              .filter(([key]) => key.startsWith(prefix))
-              .map(([key, value]) => [key.slice(prefix.length), value]),
-          );
-        });
         await createStation(
-          createStationSchema.parse({ station: fields, connectors }),
+          createStationSchema.parse({
+            station: fields,
+            connectors: connectors.rows.map(({ key }) =>
+              readPrefixedFields(form, connectorPrefix(key)),
+            ),
+          }),
         );
       }}
     >
@@ -94,14 +119,14 @@ export function StationForm({
           name="lat"
           required
           inputMode="decimal"
-          defaultValue={formatCoordinate(station?.lat)}
+          defaultValue={station?.lat}
         />
         <BaseInput
           label={COPY.lng}
           name="lng"
           required
           inputMode="decimal"
-          defaultValue={formatCoordinate(station?.lng)}
+          defaultValue={station?.lng}
         />
         <BaseSelect
           label={COPY.status}
@@ -114,6 +139,24 @@ export function StationForm({
           name="access_type"
           options={valueOptions(STATION_ACCESS)}
           defaultValue={station?.access_type ?? STATION_DEFAULTS.access}
+        />
+        <BaseSelect
+          label={STATION_MEDIA_COPY.locationType}
+          name="location_type"
+          options={LOCATION_TYPES.map((value) => ({
+            value,
+            label: STATION_MEDIA_COPY.location[value],
+          }))}
+          defaultValue={station?.location_type ?? DEFAULT_STATION_LOCATION}
+        />
+        <BaseSelect
+          label={STATION_MEDIA_COPY.parkingFeeType}
+          name="parking_fee_type"
+          options={PARKING_FEE_TYPES.map((value) => ({
+            value,
+            label: STATION_MEDIA_COPY.parking[value],
+          }))}
+          defaultValue={station?.parking_fee_type ?? DEFAULT_PARKING_FEE}
         />
         <BaseInput
           label={COPY.opening}
@@ -144,21 +187,52 @@ export function StationForm({
           {COPY.allDay}
         </label>
       </div>
+      <section className="grid gap-3 border-t border-line pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="font-semibold">{STATION_MEDIA_COPY.images}</h3>
+            <p className="text-sm text-slate-600">
+              {STATION_MEDIA_COPY.primaryHint}
+            </p>
+          </div>
+          <BaseButton onClick={() => imageRows.add(undefined)}>
+            {STATION_MEDIA_COPY.addImage}
+          </BaseButton>
+        </div>
+        {imageRows.rows.map(({ key, value }, index) => (
+          <div
+            key={key}
+            className="grid gap-3 rounded-xl border border-line p-3"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h4 className="text-sm font-medium">
+                {STATION_MEDIA_COPY.imageNumber(index + 1)}
+              </h4>
+              <BaseButton onClick={() => imageRows.remove(key)}>
+                {COPY.removeRow}
+              </BaseButton>
+            </div>
+            <StationImageFields
+              image={value}
+              prefix={imagePrefix(key)}
+              primary={selectedPrimary === key}
+              onSelectPrimary={() => setPrimaryImage(key)}
+            />
+          </div>
+        ))}
+      </section>
       {!station && (
         <section className="grid gap-3 border-t border-line pt-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-semibold">{COPY.connectors}</h3>
             <BaseButton
               disabled={!types.length}
-              onClick={() => {
-                const row = nextRow.current++;
-                setRows((current) => [...current, row]);
-              }}
+              onClick={() => connectors.add(undefined)}
             >
               {COPY.addConnector}
             </BaseButton>
           </div>
-          {rows.map((row, index) => (
+          {connectors.rows.map(({ key: row }, index) => (
             <div
               key={row}
               className="grid gap-3 rounded-xl border border-line p-3"
@@ -167,11 +241,7 @@ export function StationForm({
                 <h4 className="text-sm font-medium">
                   {COPY.connectorNumber(index + 1)}
                 </h4>
-                <BaseButton
-                  onClick={() =>
-                    setRows((current) => current.filter((item) => item !== row))
-                  }
-                >
+                <BaseButton onClick={() => connectors.remove(row)}>
                   {COPY.removeRow}
                 </BaseButton>
               </div>

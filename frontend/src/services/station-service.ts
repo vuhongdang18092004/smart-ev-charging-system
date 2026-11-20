@@ -4,11 +4,14 @@ import type { ApiSuccess } from "@/types/api";
 import type {
   Connector,
   ConnectorRequest,
+  CreateConnectorsRequest,
   CreateStationRequest,
   PaginatedResponse,
   Station,
   StationDetail,
   StationFilters,
+  StationImage,
+  StationImageRequest,
   StationRequest,
 } from "@/types/management";
 
@@ -16,7 +19,16 @@ export async function getStations(
   filters: StationFilters,
   signal?: AbortSignal,
 ) {
-  const { keyword, brandId, operatorId, status, page, size } = filters;
+  const {
+    keyword,
+    brandId,
+    operatorId,
+    status,
+    locationType,
+    parkingFeeType,
+    page,
+    size,
+  } = filters;
   return (
     await axiosClient.get<ApiSuccess<PaginatedResponse<Station>>>(
       API_ENDPOINTS.stations,
@@ -27,6 +39,8 @@ export async function getStations(
           brandId: brandId || undefined,
           operatorId: operatorId || undefined,
           status: status || undefined,
+          locationType: locationType || undefined,
+          parkingFeeType: parkingFeeType || undefined,
           page,
           size,
         },
@@ -58,9 +72,26 @@ export async function updateStation(id: string, body: StationRequest) {
 export async function deleteStation(id: string) {
   await axiosClient.delete(API_ENDPOINTS.station(id));
 }
-export async function addConnector(stationId: string, body: ConnectorRequest) {
+export async function addStationImage(
+  stationId: string,
+  body: StationImageRequest,
+) {
   return (
-    await axiosClient.post<ApiSuccess<Connector>>(
+    await axiosClient.post<ApiSuccess<StationImage>>(
+      API_ENDPOINTS.stationImages(stationId),
+      body,
+    )
+  ).data.data;
+}
+export async function deleteStationImage(stationId: string, imageId: string) {
+  await axiosClient.delete(API_ENDPOINTS.stationImage(stationId, imageId));
+}
+export async function addConnectors(
+  stationId: string,
+  body: CreateConnectorsRequest,
+) {
+  return (
+    await axiosClient.post<ApiSuccess<Connector[]>>(
       API_ENDPOINTS.stationConnectors(stationId),
       body,
     )

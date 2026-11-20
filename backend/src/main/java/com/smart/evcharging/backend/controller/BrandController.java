@@ -6,6 +6,7 @@ import com.smart.evcharging.backend.dto.response.BrandResponse;
 import com.smart.evcharging.backend.service.CatalogService;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import com.smart.evcharging.backend.dto.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,12 @@ public class BrandController extends BaseController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<BrandResponse>>> list() {
         return ok(service.brands());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<BrandResponse>> update(
+            @PathVariable UUID id, @Valid @RequestBody BrandRequest request) {
+        return ok(service.updateBrand(id, request));
     }
 
     @PostMapping

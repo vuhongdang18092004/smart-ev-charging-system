@@ -13,15 +13,19 @@ import {
   STATION_STATUSES,
   VALUE_LABELS,
 } from "@/constants/management";
-import { useResource } from "@/hooks/use-resource";
 import {
-  getBrands,
-  getConnectorTypes,
-  getOperators,
-} from "@/services/catalog-service";
+  LOCATION_TYPES,
+  PARKING_FEE_TYPES,
+  STATION_MEDIA_COPY,
+} from "@/constants/station-media";
+import { useResource } from "@/hooks/use-resource";
+import { getBrands } from "@/services/brand-service";
+import { getConnectorTypes } from "@/services/connector-type-service";
+import { getOperators } from "@/services/operator-service";
 import { getStations } from "@/services/station-service";
 import type { Station, StationFilters } from "@/types/management";
 import { namedOptions, valueOptions } from "@/utils/management-options";
+import { formatStationRating } from "@/utils/station-media";
 import { ResourceFeedback } from "../management/resource-feedback";
 import { SectionHeading } from "../management/section-heading";
 import { StationDetails } from "./station-details";
@@ -32,6 +36,8 @@ const initialFilters: StationFilters = {
   brandId: "",
   operatorId: "",
   status: "",
+  locationType: "",
+  parkingFeeType: "",
   page: 0,
   size: STATION_PAGE_SIZE,
 };
@@ -59,6 +65,8 @@ export function StationsPage() {
       brandId: String(form.get("brandId") ?? ""),
       operatorId: String(form.get("operatorId") ?? ""),
       status: String(form.get("status") ?? ""),
+      locationType: String(form.get("locationType") ?? ""),
+      parkingFeeType: String(form.get("parkingFeeType") ?? ""),
     });
   }
 
@@ -93,7 +101,7 @@ export function StationsPage() {
         <form
           onSubmit={applyFilters}
           onReset={() => setFilters(initialFilters)}
-          className="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[2fr_1fr_1fr_1fr_auto]"
+          className="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         >
           <BaseInput
             label={COPY.search}
@@ -115,6 +123,28 @@ export function StationsPage() {
             label={COPY.status}
             name="status"
             options={[allOption, ...valueOptions(STATION_STATUSES)]}
+          />
+          <BaseSelect
+            label={STATION_MEDIA_COPY.locationType}
+            name="locationType"
+            options={[
+              allOption,
+              ...LOCATION_TYPES.map((value) => ({
+                value,
+                label: STATION_MEDIA_COPY.location[value],
+              })),
+            ]}
+          />
+          <BaseSelect
+            label={STATION_MEDIA_COPY.parkingFeeType}
+            name="parkingFeeType"
+            options={[
+              allOption,
+              ...PARKING_FEE_TYPES.map((value) => ({
+                value,
+                label: STATION_MEDIA_COPY.parking[value],
+              })),
+            ]}
           />
           <div className="flex gap-2">
             <BaseButton type="submit" className="bg-brand! text-white!">
@@ -167,6 +197,29 @@ export function StationsPage() {
                       {row.status ? VALUE_LABELS[row.status] : COPY.empty}
                     </span>
                   ),
+                },
+                {
+                  id: "location-type",
+                  header: STATION_MEDIA_COPY.locationType,
+                  render: (row) => (
+                    <span className="inline-flex rounded-full bg-workspace px-2 py-1 text-xs font-medium">
+                      {STATION_MEDIA_COPY.location[row.location_type] ??
+                        COPY.empty}
+                    </span>
+                  ),
+                },
+                {
+                  id: "parking-fee",
+                  header: STATION_MEDIA_COPY.parkingFeeType,
+                  render: (row) =>
+                    STATION_MEDIA_COPY.parking[row.parking_fee_type] ??
+                    COPY.empty,
+                },
+                {
+                  id: "rating",
+                  header: STATION_MEDIA_COPY.rating,
+                  render: (row) =>
+                    formatStationRating(row.avg_rating, row.rating_count),
                 },
                 {
                   id: "actions",

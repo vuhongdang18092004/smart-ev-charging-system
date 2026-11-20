@@ -6,6 +6,7 @@ import com.smart.evcharging.backend.dto.response.ConnectorTypeResponse;
 import com.smart.evcharging.backend.service.CatalogService;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import com.smart.evcharging.backend.dto.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,12 @@ public class ConnectorTypeController extends BaseController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<ConnectorTypeResponse>>> list() {
         return ok(service.connectorTypes());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<ConnectorTypeResponse>> update(
+            @PathVariable UUID id, @Valid @RequestBody ConnectorTypeRequest request) {
+        return ok(service.updateConnectorType(id, request));
     }
 
     @PostMapping

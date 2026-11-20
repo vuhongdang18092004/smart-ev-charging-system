@@ -7,4 +7,5 @@ import org.springframework.data.jpa.repository.*;
 
 public interface BrandRepository extends JpaRepository<Brand, UUID> {
     List<Brand> findAllByOrderByNameAsc();
+    boolean existsByNameAndIdNot(String name, UUID id);
 }

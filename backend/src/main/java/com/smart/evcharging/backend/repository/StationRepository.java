@@ -9,4 +9,6 @@ import org.springframework.data.jpa.repository.*;
 public interface StationRepository extends JpaRepository<Station, UUID>, JpaSpecificationExecutor<Station> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Station> findByIdAndDeletedAtIsNull(UUID id);
+
+    boolean existsByIdAndDeletedAtIsNull(UUID id);
 }

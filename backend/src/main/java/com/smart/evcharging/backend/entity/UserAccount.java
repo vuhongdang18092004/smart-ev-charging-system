@@ -2,6 +2,8 @@ package com.smart.evcharging.backend.entity;
 
 import com.smart.evcharging.backend.common.base.BaseEntity;
 import jakarta.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -27,4 +29,11 @@ public class UserAccount extends BaseEntity {
 
     @Column(length = 20)
     private String status;
+
+    @Setter(lombok.AccessLevel.NONE)
+    @ManyToMany
+    @JoinTable(name = "operator_allowed_brands",
+            joinColumns = @JoinColumn(name = "operator_id"),
+            inverseJoinColumns = @JoinColumn(name = "brand_id"))
+    private Set<Brand> allowedBrands = new HashSet<>();
 }

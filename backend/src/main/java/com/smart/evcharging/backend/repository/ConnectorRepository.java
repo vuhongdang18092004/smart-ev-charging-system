@@ -11,4 +11,9 @@ public interface ConnectorRepository extends JpaRepository<Connector, UUID> {
 
     @Query("select c.station.id from Connector c where c.id = :id")
     Optional<UUID> findStationId(UUID id);
+
+    @Query("select c.code from Connector c where c.station.id = :stationId and c.code is not null")
+    List<String> findCodesByStationId(UUID stationId);
+
+    boolean existsByStationIdAndCodeAndIdNot(UUID stationId, String code, UUID id);
 }

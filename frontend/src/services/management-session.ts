@@ -1,5 +1,5 @@
 import axiosClient from "@/lib/axios-client";
-import { getBrands } from "./catalog-service";
+import { getBrands } from "./brand-service";
 
 export function clearManagementSession() {
   delete axiosClient.defaults.headers.common.Authorization;

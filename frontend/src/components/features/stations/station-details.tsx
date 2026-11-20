@@ -4,11 +4,16 @@ import { useCallback, useState } from "react";
 import { BaseButton } from "@/components/base/base-button";
 import { BaseModal } from "@/components/base/base-modal";
 import { BaseTable } from "@/components/base/base-table";
-import { COPY, VALUE_LABELS } from "@/constants/management";
-import { useResource } from "@/hooks/use-resource";
-import { connectorSchema } from "@/schemas/management";
 import {
-  addConnector,
+  CONNECTOR_PORT_COPY,
+  CONNECTOR_STATUS_LABELS,
+} from "@/constants/connector-ports";
+import { COPY, VALUE_LABELS } from "@/constants/management";
+import { STATION_MEDIA_COPY } from "@/constants/station-media";
+import { useResource } from "@/hooks/use-resource";
+import { connectorSchema, createConnectorsSchema } from "@/schemas/management";
+import {
+  addConnectors,
   deleteConnector,
   deleteStation,
   getStation,
@@ -19,10 +24,15 @@ import type {
   StationDetailAction,
   StationDetailsProps,
 } from "@/types/management-ui";
+import { formatStationRating } from "@/utils/station-media";
 import { ConnectorFields } from "../connectors/connector-fields";
 import { ManagedForm } from "../management/managed-form";
 import { ResourceFeedback } from "../management/resource-feedback";
 import { StationForm } from "./station-form";
+import { StationFeedback } from "./station-feedback";
+import { StationImageGallery } from "./station-image-gallery";
+
+const connectorOrder = new Intl.Collator("vi-VN", { numeric: true });
 
 export function StationDetails({
   id,
@@ -37,7 +47,7 @@ export function StationDetails({
     (signal: AbortSignal) => getStation(id, signal),
     [id],
   );
-  const detail = useResource(load);
+  const detail = useResource(load, true);
   const [action, setAction] = useState<StationDetailAction>();
   const station = detail.data?.station;
 
@@ -57,6 +67,18 @@ export function StationDetails({
       {station && detail.data && (
         <div className="grid gap-5">
           <div className="grid gap-3 rounded-xl bg-workspace p-4 text-sm sm:grid-cols-2">
+            <span>
+              <strong>{STATION_MEDIA_COPY.locationType}</strong> ·{" "}
+              {STATION_MEDIA_COPY.location[station.location_type]}
+            </span>
+            <span>
+              <strong>{STATION_MEDIA_COPY.parkingFeeType}</strong> ·{" "}
+              {STATION_MEDIA_COPY.parking[station.parking_fee_type]}
+            </span>
+            <span>
+              <strong>{STATION_MEDIA_COPY.rating}</strong> ·{" "}
+              {formatStationRating(station.avg_rating, station.rating_count)}
+            </span>
             <span>
               <strong>{COPY.address}</strong> · {station.address}
             </span>
@@ -104,6 +126,7 @@ export function StationDetails({
               {station.source_url || COPY.empty}
             </span>
           </div>
+          <StationImageGallery images={station.images ?? []} />
           <div className="flex flex-wrap gap-2">
             <BaseButton onClick={() => setAction({ kind: "edit-station" })}>
               {COPY.editStation}
@@ -127,9 +150,16 @@ export function StationDetails({
             </div>
             <BaseTable<Connector>
               caption={COPY.connectors}
-              rows={detail.data.connectors}
+              rows={detail.data.connectors.toSorted((left, right) =>
+                connectorOrder.compare(left.code ?? "", right.code ?? ""),
+              )}
               getRowKey={(row) => row.id}
               columns={[
+                {
+                  id: "code",
+                  header: CONNECTOR_PORT_COPY.code,
+                  render: (row) => row.code ?? COPY.empty,
+                },
                 {
                   id: "type",
                   header: COPY.connectorType,
@@ -143,9 +173,13 @@ export function StationDetails({
                   render: (row) => row.power_kw ?? COPY.empty,
                 },
                 {
-                  id: "quantity",
-                  header: COPY.quantity,
-                  render: (row) => row.quantity,
+                  id: "status",
+                  header: CONNECTOR_PORT_COPY.status,
+                  render: (row) => (
+                    <span className="inline-flex rounded-full bg-workspace px-2 py-1 text-xs font-medium">
+                      {CONNECTOR_STATUS_LABELS[row.status] ?? COPY.empty}
+                    </span>
+                  ),
                 },
                 {
                   id: "price",
@@ -178,6 +212,14 @@ export function StationDetails({
               ]}
             />
           </section>
+          <StationFeedback
+            stationId={id}
+            types={types}
+            onReviewSubmitted={() => {
+              detail.refresh();
+              onChange();
+            }}
+          />
         </div>
       )}
       {station && action?.kind === "edit-station" && (
@@ -209,10 +251,15 @@ export function StationDetails({
             submitLabel={action.connector ? COPY.save : COPY.create}
             onSuccess={refresh}
             submit={async (form) => {
-              const body = connectorSchema.parse(Object.fromEntries(form));
-              if (action.connector)
-                await updateConnector(action.connector.id, body);
-              else await addConnector(id, body);
+              const fields = Object.fromEntries(form);
+              if (action.connector) {
+                await updateConnector(
+                  action.connector.id,
+                  connectorSchema.parse(fields),
+                );
+              } else {
+                await addConnectors(id, createConnectorsSchema.parse(fields));
+              }
             }}
           >
             <ConnectorFields types={types} connector={action.connector} />

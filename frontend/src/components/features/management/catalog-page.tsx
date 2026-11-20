@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { BaseButton } from "@/components/base/base-button";
 import { BaseModal } from "@/components/base/base-modal";
 import { BaseTable } from "@/components/base/base-table";
 import { COPY } from "@/constants/management";
 import { useResource } from "@/hooks/use-resource";
-import type { CatalogPageProps } from "@/types/management-ui";
+import type { CatalogDialog, CatalogPageProps } from "@/types/management-ui";
 import { ManagedForm } from "./managed-form";
 import { ResourceFeedback } from "./resource-feedback";
 import { SectionHeading } from "./section-heading";
@@ -16,11 +17,19 @@ export function CatalogPage<Row extends { id: string }>({
   action,
   load,
   columns,
-  submit,
-  children,
+  create,
+  update,
+  editTitle,
+  fields,
+  secondaryAction,
 }: CatalogPageProps<Row>) {
   const collection = useResource(load);
-  const [open, setOpen] = useState(false);
+  const [dialog, setDialog] = useState<CatalogDialog<Row>>();
+
+  function saved() {
+    setDialog((current) => (current === dialog ? undefined : current));
+    collection.refresh();
+  }
 
   return (
     <div className="grid gap-6">
@@ -28,7 +37,7 @@ export function CatalogPage<Row extends { id: string }>({
         title={title}
         description={description}
         action={action}
-        onAction={() => setOpen(true)}
+        onAction={() => setDialog({ kind: "create" })}
       />
       <section className="rounded-2xl border border-line bg-white p-5 shadow-sm">
         <ResourceFeedback {...collection} />
@@ -39,25 +48,64 @@ export function CatalogPage<Row extends { id: string }>({
             </p>
             <BaseTable
               caption={title}
-              columns={columns}
+              columns={[
+                ...columns,
+                {
+                  id: "actions",
+                  header: COPY.actions,
+                  render: (row) => (
+                    <div className="flex flex-wrap gap-2">
+                      <BaseButton
+                        onClick={() => setDialog({ kind: "edit", row })}
+                      >
+                        {COPY.editCatalogItem}
+                      </BaseButton>
+                      {secondaryAction && (
+                        <BaseButton
+                          onClick={() => setDialog({ kind: "secondary", row })}
+                        >
+                          {secondaryAction.label}
+                        </BaseButton>
+                      )}
+                    </div>
+                  ),
+                },
+              ]}
               rows={collection.data}
               getRowKey={(row) => row.id}
             />
           </>
         )}
       </section>
-      {open && (
-        <BaseModal open title={action} onClose={() => setOpen(false)}>
+      {dialog?.kind === "create" && (
+        <BaseModal open title={action} onClose={() => setDialog(undefined)}>
           <ManagedForm
-            submit={submit}
+            submit={create}
             submitLabel={COPY.create}
-            onSuccess={() => {
-              setOpen(false);
-              collection.refresh();
-            }}
+            onSuccess={saved}
           >
-            {children}
+            {fields()}
           </ManagedForm>
+        </BaseModal>
+      )}
+      {dialog?.kind === "edit" && (
+        <BaseModal open title={editTitle} onClose={() => setDialog(undefined)}>
+          <ManagedForm
+            submit={(form) => update(dialog.row, form)}
+            submitLabel={COPY.save}
+            onSuccess={saved}
+          >
+            {fields(dialog.row)}
+          </ManagedForm>
+        </BaseModal>
+      )}
+      {dialog?.kind === "secondary" && secondaryAction && (
+        <BaseModal
+          open
+          title={secondaryAction.label}
+          onClose={() => setDialog(undefined)}
+        >
+          {secondaryAction.render(dialog.row, saved)}
         </BaseModal>
       )}
     </div>
