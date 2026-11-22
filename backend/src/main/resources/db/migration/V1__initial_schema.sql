@@ -67,19 +67,30 @@ CREATE TABLE operator_allowed_brands (
 );
 
 -- ============================================
--- USER VEHICLES
+-- VEHICLE CATALOG AND USER VEHICLES
 -- ============================================
+CREATE TABLE vehicles_infor (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    brand_id UUID NOT NULL REFERENCES brands(id),
+    model VARCHAR(100) NOT NULL,
+    battery_kwh DECIMAL(8,2) NOT NULL CHECK (battery_kwh > 0),
+    range_nedc_km INT NOT NULL CHECK (range_nedc_km >= 0),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    deleted_at TIMESTAMPTZ
+);
+CREATE INDEX idx_vehicles_infor_brand ON vehicles_infor(brand_id);
+
 CREATE TABLE user_vehicles (
-                               id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                               user_id           UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                               brand_id          UUID NOT NULL REFERENCES brands(id),
-                               model             VARCHAR(100),
-                               connector_type_id UUID REFERENCES connector_types(id),
-                               is_primary        BOOLEAN DEFAULT false,
-                               created_at        TIMESTAMPTZ DEFAULT now(),
-                               updated_at        TIMESTAMPTZ DEFAULT now()
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    vehicle_info_id UUID NOT NULL REFERENCES vehicles_infor(id),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    deleted_at TIMESTAMPTZ
 );
 CREATE INDEX idx_vehicles_user ON user_vehicles(user_id);
+CREATE INDEX idx_user_vehicles_info ON user_vehicles(vehicle_info_id);
 
 -- ============================================
 -- STATIONS

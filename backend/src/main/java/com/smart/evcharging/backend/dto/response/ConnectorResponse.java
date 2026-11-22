@@ -4,4 +4,4 @@ import java.util.UUID;
 import java.math.BigDecimal;
 
 public record ConnectorResponse(UUID id, UUID stationId, UUID connectorTypeId, BigDecimal powerKw,
-        BigDecimal pricePerKwh, String code, String status) {}
+        String code, String status) {}

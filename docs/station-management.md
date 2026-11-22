@@ -1,6 +1,12 @@
 # Quản lý trạm sạc
 
-Backend yêu cầu PostgreSQL có schema từ `backend/src/main/resources/db/migration/`. Chạy các migration chưa áp dụng theo thứ tự V1 đến V4 trước khi khởi động. V2 và V3 xóa `user_vehicles` nếu bảng còn tồn tại. V3 thêm thông tin trạm, các bảng media và tính lại điểm từ review hiện có. V4 chuyển tọa độ sang `DOUBLE PRECISION` và tách số lượng cổng cũ thành các bản ghi riêng. Backend sử dụng Hibernate ở chế độ `validate`. Đặt `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME` và `DB_PASSWORD` trong môi trường backend.
+Chạy thêm migration V5 sau V4. V5 chuyển giá từ cổng lên trạm, giữ `NULL` cho trạm chưa có giá và dừng nếu một trạm có nhiều giá khác nhau. Với dữ liệu cũ, hãy đối chiếu giá bằng `SELECT station_id, array_agg(DISTINCT price_per_kwh) FROM connectors GROUP BY station_id HAVING COUNT(DISTINCT price_per_kwh) > 1;` trước khi chạy V5 trong một transaction. V1 và V4 vẫn chứa cột giá cũ để các bước nâng cấp theo thứ tự có dữ liệu di chuyển. V5 khôi phục bảng xe cá nhân sau các bước V2/V3 và tạo danh mục nếu cần.
+
+Request và response trạm có `price_per_kwh` và `phone`. Khi sửa trạm, bỏ qua hai trường này để giữ giá và số điện thoại hiện tại. Gửi `phone` rỗng để xóa số điện thoại. Hợp đồng connector sử dụng các trường riêng của cổng, còn giá nằm trong response trạm. Frontend cũ cần chuyển thao tác giá sang form trạm.
+
+ADMIN dùng `/api/vehicles-infor` để quản lý danh mục xe. DRIVER quản lý xe của chính mình qua `/api/user-vehicles` và chọn mẫu qua `GET /api/vehicle-options`, trả ID, ID thương hiệu và tên mẫu. Các API này dùng HTTP Basic. Tài khoản trong `users` đăng nhập bằng email, cần trạng thái `active` và mật khẩu BCrypt. Tài khoản quản trị cấu hình hiện có vẫn truy cập được danh mục. Xóa xe hoặc mẫu xe là xóa mềm. Mẫu xe đã xóa được loại khỏi danh sách chọn, còn liên kết đã tạo của tài xế được giữ.
+
+Backend yêu cầu PostgreSQL có schema từ `backend/src/main/resources/db/migration/`. Chạy các migration chưa áp dụng theo thứ tự V1 đến V5 trước khi khởi động. V2 và V3 xóa `user_vehicles` nếu bảng còn tồn tại. V3 thêm thông tin trạm, các bảng media và tính lại điểm từ review hiện có. V4 chuyển tọa độ sang `DOUBLE PRECISION` và tách số lượng cổng cũ thành các bản ghi riêng. Backend sử dụng Hibernate ở chế độ `validate`. Đặt `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME` và `DB_PASSWORD` trong môi trường backend.
 
 Cấu hình tài khoản quản trị bằng `SPRING_SECURITY_USER_NAME` và `SPRING_SECURITY_USER_PASSWORD`. Dùng tài khoản này đăng nhập trên frontend. API quản lý dùng HTTP Basic và cần HTTPS khi triển khai ngoài localhost. Thông tin đăng nhập chỉ được giữ trong bộ nhớ của tab. API tạo operator lưu tài khoản có vai trò `operator` và hồ sơ operator trong cùng transaction, với mật khẩu được băm bằng BCrypt.
 

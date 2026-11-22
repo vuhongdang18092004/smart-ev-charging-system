@@ -7,6 +7,8 @@ public final class DomainValues {
     public static final String OPERATOR_ACCESS_TYPES = "open_to_all|closed|open_to_specific|unknown";
     public static final String STATION_ACCESS_TYPES = OPERATOR_ACCESS_TYPES + "|inherit";
     public static final String OPERATOR = "operator";
+    public static final String ADMIN_AUTHORITY = "ADMIN";
+    public static final String DRIVER_AUTHORITY = "DRIVER";
     public static final String DEFAULT_CONNECTOR_STATUS = "available";
     public static final String CONNECTOR_STATUSES = DEFAULT_CONNECTOR_STATUS + "|occupied|maintenance|out_of_service";
     public static final int MAX_CONNECTOR_QUANTITY = 50;

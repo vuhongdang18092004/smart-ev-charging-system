@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.smart.evcharging.backend.common.constants.DomainValues;
 import jakarta.validation.constraints.*;
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
@@ -24,5 +25,7 @@ public record StationRequest(
         @Size(max = 500) String sourceUrl,
         @JsonAlias("locationType") @Pattern(regexp = DomainValues.LOCATION_TYPES) String locationType,
         @JsonAlias("parkingFeeType") @Pattern(regexp = DomainValues.PARKING_FEE_TYPES) String parkingFeeType,
-        List<@NotNull @Valid StationImageRequest> images
+        List<@NotNull @Valid StationImageRequest> images,
+        @Digits(integer = 8, fraction = 2) @PositiveOrZero BigDecimal pricePerKwh,
+        @Size(max = 20) String phone
 ) {}

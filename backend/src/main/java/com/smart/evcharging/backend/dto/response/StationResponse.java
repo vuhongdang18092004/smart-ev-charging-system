@@ -12,5 +12,5 @@ public record StationResponse(
         String status, @JsonProperty("is_24_7") Boolean is24_7, LocalTime openingTime, LocalTime closingTime, String accessType,
         String sourceUrl, Instant lastSyncedAt, Instant createdAt, Instant updatedAt,
         String locationType, String parkingFeeType, BigDecimal avgRating, int ratingCount,
-        List<StationImageResponse> images
+        List<StationImageResponse> images, BigDecimal pricePerKwh, String phone
 ) {}

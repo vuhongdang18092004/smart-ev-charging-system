@@ -193,7 +193,6 @@ public class StationServiceImpl extends BaseServiceImpl<Station, UUID> implement
         }
         connector.setConnectorType(findConnectorType(request.connectorTypeId()));
         connector.setPowerKw(request.powerKw());
-        connector.setPricePerKwh(request.pricePerKwh());
         if (request.status() != null) {
             connector.setStatus(request.status());
         }
@@ -230,6 +229,12 @@ public class StationServiceImpl extends BaseServiceImpl<Station, UUID> implement
         station.setClosingTime(request.closingTime());
         station.setAccessType(Objects.requireNonNullElse(request.accessType(), DomainValues.DEFAULT_STATION_ACCESS));
         station.setSourceUrl(request.sourceUrl());
+        if (request.pricePerKwh() != null) {
+            station.setPricePerKwh(request.pricePerKwh());
+        }
+        if (request.phone() != null) {
+            station.setPhone(request.phone().isBlank() ? null : request.phone().strip());
+        }
         if (request.locationType() != null) {
             station.setLocationType(request.locationType());
         }
@@ -265,7 +270,6 @@ public class StationServiceImpl extends BaseServiceImpl<Station, UUID> implement
             connector.setStation(station);
             connector.setConnectorType(type);
             connector.setPowerKw(request.powerKw());
-            connector.setPricePerKwh(request.pricePerKwh());
             connector.setCode(code);
             connector.setStatus(Objects.requireNonNullElse(request.status(), DomainValues.DEFAULT_CONNECTOR_STATUS));
             ports.add(connector);
@@ -288,12 +292,13 @@ public class StationServiceImpl extends BaseServiceImpl<Station, UUID> implement
                 station.getIs24_7(), station.getOpeningTime(), station.getClosingTime(), station.getAccessType(),
                 station.getSourceUrl(), station.getLastSyncedAt(), station.getCreatedAt(), station.getUpdatedAt(),
                 station.getLocationType(), station.getParkingFeeType(), station.getAvgRating(), station.getRatingCount(),
-                station.getImages().stream().sorted(IMAGE_ORDER).map(StationServiceImpl::toImage).toList());
+                station.getImages().stream().sorted(IMAGE_ORDER).map(StationServiceImpl::toImage).toList(),
+                station.getPricePerKwh(), station.getPhone());
     }
 
     private static ConnectorResponse toConnector(Connector connector) {
         return new ConnectorResponse(connector.getId(), connector.getStation().getId(),
-                connector.getConnectorType().getId(), connector.getPowerKw(), connector.getPricePerKwh(),
+                connector.getConnectorType().getId(), connector.getPowerKw(),
                 connector.getCode(), connector.getStatus());
     }
 

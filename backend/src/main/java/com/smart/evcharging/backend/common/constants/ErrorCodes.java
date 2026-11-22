@@ -2,6 +2,8 @@ package com.smart.evcharging.backend.common.constants;
 
 public final class ErrorCodes {
     public static final String CONFLICT = "error.conflict";
+    public static final String DRIVER_REQUIRED = "error.driver-required";
+    public static final String INVALID_VEHICLE_INFO = "error.invalid-vehicle-info";
     public static final String DUPLICATE_STATION_CONNECTOR_CODE = "error.duplicate-station-connector-code";
     public static final String INVALID_CONNECTOR_CODE_GROUP = "error.invalid-connector-code-group";
     public static final String INVALID_DRIVER = "error.invalid-driver";

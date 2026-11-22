@@ -60,6 +60,12 @@ public class Station extends BaseEntity {
 
     private Instant lastSyncedAt;
 
+    @Column(name = "price_per_kwh", precision = 10, scale = 2)
+    private BigDecimal pricePerKwh;
+
+    @Column(length = 20)
+    private String phone;
+
     @Column(name = "location_type", nullable = false, length = 20)
     private String locationType = DomainValues.PUBLIC_LOCATION;
 
