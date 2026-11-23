@@ -24,6 +24,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
     private final MessageSource messages;
 
+    @ExceptionHandler(AuthDeliveryException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthDelivery(Locale locale) {
+        return response(HttpStatus.SERVICE_UNAVAILABLE, "error.auth-delivery", locale);
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleConflict(Locale locale) {
         return response(HttpStatus.CONFLICT, ErrorCodes.CONFLICT, locale);

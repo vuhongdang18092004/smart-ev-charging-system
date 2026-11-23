@@ -9,6 +9,7 @@ import com.smart.evcharging.backend.entity.*;
 import com.smart.evcharging.backend.repository.*;
 import com.smart.evcharging.backend.service.CatalogService;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -33,6 +34,9 @@ public class CatalogServiceImpl implements CatalogService {
     private final ConnectorTypeRepository connectorTypes;
     private final UserAccountRepository users;
     private final OperatorProfileRepository profiles;
+    private final AuthSessionRepository sessions;
+    @org.springframework.beans.factory.annotation.Value("${app.auth.enabled:false}")
+    private boolean authEnabled;
     private final PasswordEncoder passwords = new BCryptPasswordEncoder();
 
     @Override
@@ -139,6 +143,20 @@ public class CatalogServiceImpl implements CatalogService {
         OperatorProfile profile = profiles.findById(id).orElseThrow(CatalogServiceImpl::operatorNotFound);
         if (users.existsByEmailForOtherUser(request.email(), id)) {
             throw new CustomBusinessException(ErrorCodes.DUPLICATE_USER_EMAIL, HttpStatus.CONFLICT);
+        }
+        boolean emailChanged = !user.getEmail().equalsIgnoreCase(request.email());
+        boolean statusChanged = request.status() != null && !Objects.equals(request.status(), user.getStatus());
+        if (emailChanged) {
+            user.setEmailVerified(false);
+            user.setEmailVerifiedAt(null);
+            if (authEnabled) {
+                Instant now = Instant.now();
+                sessions.consumeOtp(id, "verify_email", now);
+                sessions.consumeOtp(id, "reset_password", now);
+            }
+        }
+        if (authEnabled && (emailChanged || statusChanged || request.password() != null)) {
+            sessions.revokeUser(id, Instant.now());
         }
         user.setName(request.name().strip());
         user.setEmail(request.email());

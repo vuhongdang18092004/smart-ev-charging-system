@@ -19,6 +19,8 @@ import {
   STATION_MEDIA_COPY,
 } from "@/constants/station-media";
 import { useResource } from "@/hooks/use-resource";
+import { WEB_ROLE } from "@/constants/web-auth";
+import type { WebUser } from "@/types/web-auth";
 import { getBrands } from "@/services/brand-service";
 import { getConnectorTypes } from "@/services/connector-type-service";
 import { getOperators } from "@/services/operator-service";
@@ -43,7 +45,7 @@ const initialFilters: StationFilters = {
 };
 const allOption = { value: "", label: COPY.all };
 
-export function StationsPage() {
+export function StationsPage({ user }: { user: WebUser }) {
   const [filters, setFilters] = useState(initialFilters);
   const [selected, setSelected] = useState<string>();
   const [creating, setCreating] = useState(false);
@@ -71,7 +73,10 @@ export function StationsPage() {
   }
 
   const brandItems = brands.data ?? [];
-  const operatorItems = operators.data ?? [];
+  const admin = user.role === WEB_ROLE.admin;
+  const operatorItems = admin
+    ? (operators.data ?? [])
+    : (operators.data ?? []).filter((operator) => operator.id === user.id);
   const connectorTypes = types.data ?? [];
   const ready =
     Boolean(brandItems.length && operatorItems.length) && Boolean(types.data);
@@ -262,6 +267,7 @@ export function StationsPage() {
       )}
       {selected && (
         <StationDetails
+          canManageFeedback={admin}
           id={selected}
           brands={brandItems}
           operators={operatorItems}

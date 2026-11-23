@@ -142,6 +142,10 @@ export const updateOperatorSchema = operatorSchema.extend({
     operatorSchema.shape.password.optional(),
   ),
 });
+export const inviteOperatorSchema = operatorSchema.pick({
+  name: true,
+  email: true,
+});
 export const allowedBrandsSchema = z.object({ brandIds: z.array(id) });
 export const connectorSchema = z.object({
   connector_type_id: id,

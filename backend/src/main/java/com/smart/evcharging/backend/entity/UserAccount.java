@@ -2,6 +2,7 @@ package com.smart.evcharging.backend.entity;
 
 import com.smart.evcharging.backend.common.base.BaseEntity;
 import jakarta.persistence.*;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.Getter;
@@ -29,6 +30,12 @@ public class UserAccount extends BaseEntity {
 
     @Column(length = 20)
     private String status;
+
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified;
+
+    @Column(name = "email_verified_at")
+    private Instant emailVerifiedAt;
 
     @Setter(lombok.AccessLevel.NONE)
     @ManyToMany

@@ -35,6 +35,7 @@ import { StationImageGallery } from "./station-image-gallery";
 const connectorOrder = new Intl.Collator("vi-VN", { numeric: true });
 
 export function StationDetails({
+  canManageFeedback,
   id,
   brands,
   operators,
@@ -212,14 +213,16 @@ export function StationDetails({
               ]}
             />
           </section>
-          <StationFeedback
-            stationId={id}
-            types={types}
-            onReviewSubmitted={() => {
-              detail.refresh();
-              onChange();
-            }}
-          />
+          {canManageFeedback && (
+            <StationFeedback
+              stationId={id}
+              types={types}
+              onReviewSubmitted={() => {
+                detail.refresh();
+                onChange();
+              }}
+            />
+          )}
         </div>
       )}
       {station && action?.kind === "edit-station" && (

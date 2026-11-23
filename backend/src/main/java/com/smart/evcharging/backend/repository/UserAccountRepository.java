@@ -12,6 +12,18 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, UUID> 
     @Query("select u from UserAccount u where lower(u.email) = lower(:email) and u.deletedAt is null")
     Optional<UserAccount> findByLoginEmail(String email);
 
+    @Query("select u.id from UserAccount u where lower(u.email) = lower(:email) and u.deletedAt is null")
+    Optional<UUID> findLoginId(String email);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from UserAccount u where u.id = :id and u.deletedAt is null")
+    Optional<UserAccount> lockActiveRecord(UUID id);
+
+    boolean existsByRole(String role);
+
+    @Query("select count(u) > 0 from UserAccount u where lower(u.email) = lower(:email)")
+    boolean existsByLoginEmail(String email);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from UserAccount u where u.id = :id and u.role = :role and u.deletedAt is null")
     Optional<UserAccount> lockByIdAndRole(UUID id, String role);

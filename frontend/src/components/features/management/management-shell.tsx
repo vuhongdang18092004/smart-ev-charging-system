@@ -4,14 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { BaseButton } from "@/components/base/base-button";
-import { BaseInput } from "@/components/base/base-input";
 import { COPY, ROUTES } from "@/constants/management";
-import {
-  clearManagementSession,
-  startManagementSession,
-} from "@/services/management-session";
-import type { WorkspaceProps } from "@/types/management-ui";
-import { ManagedForm } from "./managed-form";
+import { WEB_AUTH_COPY, WEB_AUTH_ROUTES, WEB_ROLE } from "@/constants/web-auth";
+import { webAuth } from "@/services/web-auth-service";
+import type { ManagementShellProps } from "@/types/web-auth";
 
 const navigation = [
   { href: ROUTES.stations, label: COPY.stations },
@@ -20,9 +16,26 @@ const navigation = [
   { href: ROUTES.operators, label: COPY.operators },
 ];
 
-export function ManagementShell({ children }: WorkspaceProps) {
-  const [signedIn, setSignedIn] = useState(false);
+export function ManagementShell({ children, user }: ManagementShellProps) {
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState(false);
   const pathname = usePathname();
+  const links =
+    user.role === WEB_ROLE.admin
+      ? navigation
+      : navigation.filter((item) => item.href === ROUTES.stations);
+
+  async function signOut() {
+    setSigningOut(true);
+    setSignOutError(false);
+    try {
+      await webAuth("logout");
+      window.location.replace(WEB_AUTH_ROUTES.login);
+    } catch {
+      setSignOutError(true);
+      setSigningOut(false);
+    }
+  }
 
   return (
     <div className="management-workspace min-h-screen bg-workspace text-ink md:grid md:grid-cols-[15rem_minmax(0,1fr)]">
@@ -43,7 +56,7 @@ export function ManagementShell({ children }: WorkspaceProps) {
           aria-label={COPY.overview}
           className="grid grid-cols-2 gap-1.5 md:grid-cols-1"
         >
-          {navigation.map(({ href, label }) => (
+          {links.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
@@ -54,61 +67,25 @@ export function ManagementShell({ children }: WorkspaceProps) {
             </Link>
           ))}
         </nav>
-        {signedIn && (
-          <BaseButton
-            className="mt-6 self-start bg-white/10! text-white! md:mt-auto"
-            onClick={() => {
-              clearManagementSession();
-              setSignedIn(false);
-            }}
-          >
-            {COPY.signOut}
-          </BaseButton>
+        <BaseButton
+          className="mt-6 self-start bg-white/10! text-white! md:mt-auto"
+          onClick={() => void signOut()}
+          disabled={signingOut}
+        >
+          {COPY.signOut}
+        </BaseButton>
+        {signOutError && (
+          <p role="alert" className="mt-2 text-sm">
+            {WEB_AUTH_COPY.signOutFailed}
+          </p>
         )}
       </aside>
       <main className="min-w-0">
         <div className="border-b border-line bg-white px-5 py-4 text-sm font-medium text-slate-600 lg:px-9">
-          {COPY.workspace}
+          {COPY.workspace} · {user.name}
         </div>
         <div className="mx-auto max-w-7xl px-5 py-7 lg:px-9 lg:py-9">
-          {signedIn ? (
-            children
-          ) : (
-            <section className="mx-auto mt-8 grid max-w-md gap-5 rounded-2xl border border-line bg-white p-6 shadow-sm">
-              <div>
-                <h1 className="text-2xl font-semibold tracking-tight">
-                  {COPY.signIn}
-                </h1>
-                <p className="mt-2 text-sm text-slate-600">
-                  {COPY.authDescription}
-                </p>
-              </div>
-              <ManagedForm
-                submitLabel={COPY.signIn}
-                onSuccess={() => setSignedIn(true)}
-                submit={(form) =>
-                  startManagementSession(
-                    String(form.get("username") ?? ""),
-                    String(form.get("password") ?? ""),
-                  )
-                }
-              >
-                <BaseInput
-                  name="username"
-                  label={COPY.username}
-                  autoComplete="username"
-                  required
-                />
-                <BaseInput
-                  name="password"
-                  label={COPY.password}
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                />
-              </ManagedForm>
-            </section>
-          )}
+          {children}
         </div>
       </main>
     </div>

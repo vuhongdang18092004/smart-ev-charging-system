@@ -1,4 +1,19 @@
 spring:
+  flyway:
+    enabled: ${FLYWAY_ENABLED:false}
+    baseline-on-migrate: false
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_APP_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${MAIL_SMTP_AUTH:true}
+      mail.smtp.starttls.enable: ${MAIL_SMTP_STARTTLS:true}
+      mail.smtp.starttls.required: ${MAIL_SMTP_STARTTLS:true}
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
   application:
     name: backend
 
@@ -33,5 +48,19 @@ dotenv:
   filename: .env
 
 app:
+  auth:
+    enabled: ${AUTH_ENABLED:false}
+    issuer: ${AUTH_ISSUER:chargeops}
+    access-ttl: ${AUTH_ACCESS_TTL:PT15M}
+    refresh-ttl: ${AUTH_REFRESH_TTL:P7D}
+    otp-ttl: ${AUTH_OTP_TTL:PT5M}
+    resend-delay: ${AUTH_OTP_RESEND_DELAY:PT60S}
+    otp-attempts: ${AUTH_OTP_ATTEMPTS:5}
+    ip-requests-per-minute: ${AUTH_IP_REQUESTS_PER_MINUTE:30}
+    admin-email: ${AUTH_ADMIN_EMAIL:}
+    admin-password: ${AUTH_ADMIN_PASSWORD:}
+    jwt-key: ${AUTH_JWT_KEY:}
+    otp-key: ${AUTH_OTP_KEY:}
+    legacy-basic-enabled: ${AUTH_LEGACY_BASIC_ENABLED:true}
   cors:
     allowed-origins: "${FRONTEND_ALLOWED_ORIGINS:http://localhost:3000}"

@@ -17,10 +17,10 @@ export async function getOperators(signal?: AbortSignal) {
   ).data.data;
 }
 
-export async function createOperator(body: OperatorRequest) {
-  return (
-    await axiosClient.post<ApiSuccess<Operator>>(API_ENDPOINTS.operators, body)
-  ).data.data;
+export async function inviteOperator(
+  body: Pick<OperatorRequest, "name" | "email">,
+) {
+  await axiosClient.post(API_ENDPOINTS.inviteOperator, body);
 }
 
 export async function updateOperator(id: string, body: UpdateOperatorRequest) {

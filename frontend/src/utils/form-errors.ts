@@ -2,7 +2,8 @@ import { COPY, FIELD_LABELS } from "@/constants/management";
 import { UI_LABELS } from "@/constants/ui-labels";
 import { STATION_MEDIA_COPY } from "@/constants/station-media";
 import { CONNECTOR_PORT_COPY } from "@/constants/connector-ports";
-import { ApiError } from "@/lib/axios-client";
+import { WEB_AUTH_COPY } from "@/constants/web-auth";
+import { ApiError } from "@/lib/api-error";
 import type { ZodError } from "zod";
 
 const attachmentFields: Readonly<Record<string, string>> = {
@@ -27,8 +28,20 @@ const connectorFields: Readonly<Record<string, string>> = {
 };
 
 export function errorMessage(error: unknown) {
-  if (error instanceof ApiError && error.status === 401) return COPY.authFailed;
-  return error instanceof ApiError ? error.message : UI_LABELS.requestFailed;
+  if (!(error instanceof ApiError)) return UI_LABELS.requestFailed;
+  if (error.status === 401) return COPY.authFailed;
+  switch (error.code) {
+    case "error.invalid-otp":
+      return WEB_AUTH_COPY.otpInvalid;
+    case "error.account-disabled":
+      return WEB_AUTH_COPY.accountDisabled;
+    case "error.too-many-attempts":
+      return WEB_AUTH_COPY.rateLimited;
+    case "error.auth-unavailable":
+      return WEB_AUTH_COPY.authUnavailable;
+    default:
+      return error.message || UI_LABELS.requestFailed;
+  }
 }
 
 export function validationMessage(error: ZodError) {

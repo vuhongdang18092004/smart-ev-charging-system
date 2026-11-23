@@ -21,6 +21,8 @@ import java.util.UUID;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,8 +61,10 @@ public class StationServiceImpl extends BaseServiceImpl<Station, UUID> implement
         if (filter.brandId() != null) {
             matches = matches.and((root, query, cb) -> cb.equal(root.get("brand").get("id"), filter.brandId()));
         }
-        if (filter.operatorId() != null) {
-            matches = matches.and((root, query, cb) -> cb.equal(root.get("operator").get("id"), filter.operatorId()));
+        UUID ownerId = currentOperatorId();
+        UUID operatorId = ownerId == null ? filter.operatorId() : ownerId;
+        if (operatorId != null) {
+            matches = matches.and((root, query, cb) -> cb.equal(root.get("operator").get("id"), operatorId));
         }
         if (filter.status() != null) {
             matches = matches.and((root, query, cb) -> cb.equal(root.get("status"), filter.status()));
@@ -78,6 +82,7 @@ public class StationServiceImpl extends BaseServiceImpl<Station, UUID> implement
     @Override
     public StationDetailResponse detail(UUID id) {
         Station station = findById(id);
+        requireOwner(station);
         List<ConnectorResponse> items = connectors.findByStationIdOrderById(id).stream()
                 .map(StationServiceImpl::toConnector).toList();
         return new StationDetailResponse(toStation(station), items);
@@ -206,7 +211,25 @@ public class StationServiceImpl extends BaseServiceImpl<Station, UUID> implement
     }
 
     private Station lockStation(UUID id) {
-        return stations.findByIdAndDeletedAtIsNull(id).orElseThrow(StationServiceImpl::notFound);
+        Station station = stations.findByIdAndDeletedAtIsNull(id).orElseThrow(StationServiceImpl::notFound);
+        requireOwner(station);
+        return station;
+    }
+
+    private UUID currentOperatorId() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getAuthorities().stream()
+                .noneMatch(authority -> authority.getAuthority().equals("ROLE_OPERATOR"))) {
+            return null;
+        }
+        return users.findLoginId(authentication.getName()).orElseThrow(StationServiceImpl::notFound);
+    }
+
+    private void requireOwner(Station station) {
+        UUID operatorId = currentOperatorId();
+        if (operatorId != null && !operatorId.equals(station.getOperator().getId())) {
+            throw notFound();
+        }
     }
 
     private Connector lockConnectorStation(UUID id) {
@@ -215,6 +238,10 @@ public class StationServiceImpl extends BaseServiceImpl<Station, UUID> implement
     }
 
     private void applyStation(Station station, StationRequest request) {
+        UUID operatorId = currentOperatorId();
+        if (operatorId != null && !operatorId.equals(request.operatorId())) {
+            throw new AccessDeniedException(ErrorCodes.OPERATOR_NOT_FOUND);
+        }
         station.setOperator(users.findByIdAndRoleAndDeletedAtIsNull(request.operatorId(), DomainValues.OPERATOR)
                 .orElseThrow(() -> invalidReference(ErrorCodes.INVALID_OPERATOR)));
         station.setBrand(brands.findById(request.brandId())

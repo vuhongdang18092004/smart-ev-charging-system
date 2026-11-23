@@ -2,6 +2,8 @@ package com.smart.evcharging.backend.config;
 
 import com.smart.evcharging.backend.common.constants.DomainValues;
 import com.smart.evcharging.backend.repository.UserAccountRepository;
+import com.smart.evcharging.backend.repository.AuthSessionRepository;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -15,11 +17,43 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration(proxyBeanMethods = false)
 public class SecurityConfig {
     @Bean
+    @Order(0)
+    @ConditionalOnProperty(name="app.auth.enabled", havingValue="true")
+    SecurityFilterChain jwtSecurityFilterChain(HttpSecurity http, AuthProperties properties, AuthTokenCodec codec,
+            UserAccountRepository users, AuthSessionRepository sessions) throws Exception {
+        if (properties.legacyBasicEnabled()) {
+            http.httpBasic(Customizer.withDefaults());
+        }
+        return stateless(http)
+                .addFilterBefore(new BearerSessionFilter(codec, users, sessions), UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(errors -> errors.accessDeniedHandler((request, response, exception) -> response.setStatus(403))
+                        .authenticationEntryPoint((request, response, exception) -> {
+                    response.setHeader("WWW-Authenticate", "Bearer");
+                    response.setStatus(401);
+                }))
+                .authorizeHttpRequests(rules -> rules
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/verify-email",
+                                "/api/auth/resend-otp", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout",
+                                "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
+                        .requestMatchers("/api/auth/me").hasAnyRole("ADMIN", "OPERATOR", "DRIVER")
+                        .requestMatchers(HttpMethod.POST, "/api/operators").denyAll()
+                        .requestMatchers("/api/user-vehicles/**", "/api/vehicle-options").hasRole("DRIVER")
+                        .requestMatchers(HttpMethod.GET, "/api/stations", "/api/stations/*").hasAnyRole("ADMIN", "USER", "OPERATOR", "DRIVER")
+                        .requestMatchers(HttpMethod.GET, "/api/brands", "/api/operators", "/api/connector-types").hasAnyRole("ADMIN", "USER", "OPERATOR")
+                        .requestMatchers(HttpMethod.POST, "/api/stations", "/api/stations/*/images", "/api/stations/*/connectors").hasAnyRole("ADMIN", "USER", "OPERATOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/stations/*", "/api/connectors/*").hasAnyRole("ADMIN", "USER", "OPERATOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/stations/*", "/api/connectors/*", "/api/stations/*/images/*").hasAnyRole("ADMIN", "USER", "OPERATOR")
+                        .anyRequest().hasAnyRole("ADMIN", "USER"))
+                .build();
+    }
+    @Bean
     @Order(1)
+    @ConditionalOnProperty(name="app.auth.enabled", havingValue="false", matchIfMissing=true)
     SecurityFilterChain vehicleSecurityFilterChain(HttpSecurity http, UserDetailsService configuredAdmin,
             UserAccountRepository users) throws Exception {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(new VehicleUserDetailsService(configuredAdmin, users));
@@ -37,15 +71,19 @@ public class SecurityConfig {
     }
 
     @Bean
+    @ConditionalOnProperty(name="app.auth.enabled", havingValue="false", matchIfMissing=true)
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return base(http).authorizeHttpRequests(rules -> rules.anyRequest().authenticated()).build();
     }
 
     private static HttpSecurity base(HttpSecurity http) throws Exception {
+        return stateless(http).httpBasic(Customizer.withDefaults());
+    }
+
+    private static HttpSecurity stateless(HttpSecurity http) throws Exception {
         return http
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
                 .sessionManagement(sessions -> sessions.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .requestCache(AbstractHttpConfigurer::disable)
-                .httpBasic(Customizer.withDefaults());
+                .requestCache(AbstractHttpConfigurer::disable);
     }
 }

@@ -11,9 +11,13 @@ import {
   OPERATOR_STATUSES,
   VALUE_LABELS,
 } from "@/constants/management";
-import { operatorSchema, updateOperatorSchema } from "@/schemas/management";
 import {
-  createOperator,
+  inviteOperatorSchema,
+  updateOperatorSchema,
+} from "@/schemas/management";
+import { WEB_AUTH_COPY } from "@/constants/web-auth";
+import {
+  inviteOperator,
   getOperators,
   updateOperator,
 } from "@/services/operator-service";
@@ -26,10 +30,10 @@ export function OperatorsPage() {
     <CatalogPage
       title={COPY.operators}
       description={COPY.operatorDescription}
-      action={COPY.addOperator}
+      action={WEB_AUTH_COPY.inviteOperator}
       load={getOperators}
       create={(form) =>
-        createOperator(operatorSchema.parse(Object.fromEntries(form)))
+        inviteOperator(inviteOperatorSchema.parse(Object.fromEntries(form)))
       }
       editTitle={COPY.editOperator}
       update={(row, form) =>
@@ -61,43 +65,50 @@ export function OperatorsPage() {
             defaultValue={row?.email}
             required
           />
-          <BaseInput
-            label={COPY.password}
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            minLength={row ? undefined : CATALOG_LIMITS.passwordMin}
-            required={!row}
-            aria-describedby={row ? "operator-password-hint" : undefined}
-          />
           {row && (
-            <p id="operator-password-hint" className="text-sm text-slate-600">
-              {COPY.optionalPassword}
-            </p>
+            <>
+              <BaseInput
+                label={COPY.password}
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                aria-describedby="operator-password-hint"
+              />
+              {row && (
+                <p
+                  id="operator-password-hint"
+                  className="text-sm text-slate-600"
+                >
+                  {COPY.optionalPassword}
+                </p>
+              )}
+              {row && (
+                <BaseSelect
+                  label={COPY.status}
+                  name="status"
+                  options={[
+                    { value: "", label: COPY.empty },
+                    ...valueOptions(OPERATOR_STATUSES),
+                  ]}
+                  defaultValue={row.status ?? ""}
+                />
+              )}
+              <BaseSelect
+                label={COPY.access}
+                name="access_type"
+                options={valueOptions(OPERATOR_ACCESS)}
+                defaultValue={
+                  row?.access_type ?? CATALOG_DEFAULTS.operatorAccess
+                }
+              />
+              <BaseInput
+                label={COPY.endpoint}
+                name="api_endpoint"
+                maxLength={CATALOG_LIMITS.url}
+                defaultValue={row?.api_endpoint ?? ""}
+              />
+            </>
           )}
-          {row && (
-            <BaseSelect
-              label={COPY.status}
-              name="status"
-              options={[
-                { value: "", label: COPY.empty },
-                ...valueOptions(OPERATOR_STATUSES),
-              ]}
-              defaultValue={row.status ?? ""}
-            />
-          )}
-          <BaseSelect
-            label={COPY.access}
-            name="access_type"
-            options={valueOptions(OPERATOR_ACCESS)}
-            defaultValue={row?.access_type ?? CATALOG_DEFAULTS.operatorAccess}
-          />
-          <BaseInput
-            label={COPY.endpoint}
-            name="api_endpoint"
-            maxLength={CATALOG_LIMITS.url}
-            defaultValue={row?.api_endpoint ?? ""}
-          />
         </>
       )}
       columns={[

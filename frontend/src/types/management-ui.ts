@@ -75,6 +75,7 @@ export interface StationFormProps extends StationReferences {
   onSuccess: () => void;
 }
 export interface StationDetailsProps extends StationReferences {
+  canManageFeedback: boolean;
   id: string;
   onClose: () => void;
   onChange: () => void;

@@ -3,6 +3,7 @@ export const API_ENDPOINTS = {
   brands: "/brands",
   connectorTypes: "/connector-types",
   operators: "/operators",
+  inviteOperator: "/admin/operators",
   brand: (id: string) => `/brands/${encodeURIComponent(id)}`,
   connectorType: (id: string) => `/connector-types/${encodeURIComponent(id)}`,
   operator: (id: string) => `/operators/${encodeURIComponent(id)}`,

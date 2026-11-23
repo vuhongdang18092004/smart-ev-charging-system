@@ -1,24 +1,17 @@
 import axios from "axios";
+import { WEB_AUTH_ROUTES } from "@/constants/web-auth";
+import { refreshWebSession } from "@/services/web-auth-service";
+import { ApiError } from "./api-error";
 import { UI_LABELS } from "@/constants/ui-labels";
 import type { ApiErrorResponse } from "@/types/api";
 
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    readonly status: number | undefined,
-    readonly code: string | undefined,
-    cause: unknown,
-  ) {
-    super(message, { cause });
-    this.name = "ApiError";
-  }
-}
+export { ApiError } from "./api-error";
 
 const axiosClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080/api",
+  baseURL: WEB_AUTH_ROUTES.bff,
 });
 
-axiosClient.interceptors.response.use(undefined, (error: unknown) => {
+axiosClient.interceptors.response.use(undefined, async (error: unknown) => {
   if (
     !axios.isAxiosError<Partial<ApiErrorResponse>>(error) ||
     axios.isCancel(error)
@@ -26,6 +19,25 @@ axiosClient.interceptors.response.use(undefined, (error: unknown) => {
     throw error;
   }
 
+  const config = error.config;
+  if (
+    error.response?.status === 401 &&
+    config &&
+    !("webSessionRetried" in config)
+  ) {
+    await refreshWebSession().catch((cause: unknown) => {
+      if (
+        typeof window !== "undefined" &&
+        cause instanceof ApiError &&
+        (cause.status === 401 || cause.status === 403)
+      ) {
+        window.location.replace(WEB_AUTH_ROUTES.login);
+      }
+      throw cause;
+    });
+    const retry = { ...config, webSessionRetried: true };
+    return axiosClient.request(retry);
+  }
   const data = error.response?.data;
   throw new ApiError(
     typeof data?.message === "string" ? data.message : UI_LABELS.requestFailed,
