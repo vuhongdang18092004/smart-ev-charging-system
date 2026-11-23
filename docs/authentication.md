@@ -56,3 +56,11 @@ Trang `/login` dành cho ADMIN và OPERATOR. Các trang quản trị kiểm tra 
 Sau `npm run build` trong `frontend/`, chạy `node scripts/web-auth-smoke.mjs` để kiểm tra BFF tự động với backend giả lập. Để thử qua trình duyệt, dùng backend tạm đã bật JWT với SMTP giả lập hoặc tài khoản thử đã xác thực. Mở `/login`, kiểm tra cookie HttpOnly, thử mở `/operators` với OPERATOR và gửi một request ghi có Origin khác để xác nhận bị chặn. Web mới cần backend JWT hoạt động để đăng nhập; kích hoạt cơ chế mới trên môi trường đang dùng là bước riêng.
 
 Bật `AUTH_INTEGRATION_TEST=true` chỉ với PostgreSQL tạm có dữ liệu giả lập. Chạy Maven Wrapper với Flyway và auth được bật, khóa thử ngẫu nhiên và cấu hình datasource trỏ tới database tạm. Các bài kiểm thử mock mail và không gửi SMTP thật.
+
+### Mobile Expo
+
+Dùng `mobile/.env.example` để tạo cấu hình local. `EXPO_PUBLIC_API_BASE_URL` bao gồm hậu tố `/api`. Android emulator có thể dùng `10.0.2.2`, còn máy thật dùng địa chỉ LAN của máy chạy backend. Bản production yêu cầu HTTPS. Backend phải bật JWT trước khi có thể đăng nhập. Expo Web hiển thị thông báo vì luồng này yêu cầu SecureStore trên Android hoặc iOS.
+
+Mobile chỉ lưu refresh token và thông tin để tiếp tục xác thực gồm email, loại yêu cầu và thời điểm gửi ước tính trong SecureStore. Access token ở bộ nhớ. OTP và mật khẩu chỉ tồn tại trong form lúc nhập. Đồng hồ 5 phút và 60 giây dùng giá trị backend mặc định, còn backend quyết định mã còn hiệu lực và đã đủ điều kiện gửi lại hay chưa. Nếu mất mạng khi đăng xuất, ứng dụng xóa phiên cục bộ và hiển thị cảnh báo vì không xác nhận được việc thu hồi phiên trên máy chủ.
+
+Trong `mobile/`, chạy `npx tsc --noEmit`, `npm run lint` và `npm run test:auth`. Với checkout chưa có kiểu route, chạy `npx expo start` một lần để Expo tạo `.expo/types`. Kiểm tra thêm trên thiết bị với backend tạm và OTP giả lập: đăng ký, đóng/mở trước và sau xác thực, đăng nhập, kiểm tra hồ sơ và đăng xuất.
