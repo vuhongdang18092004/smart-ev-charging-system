@@ -1,5 +1,7 @@
 package com.smart.evcharging.backend.service.impl;
 
+import com.smart.evcharging.backend.repository.UserVehicleRepository;
+import com.smart.evcharging.backend.service.CatalogOwnership;
 import com.smart.evcharging.backend.common.base.BaseServiceImpl;
 import com.smart.evcharging.backend.common.constants.ErrorCodes;
 import com.smart.evcharging.backend.common.exception.CustomBusinessException;
@@ -21,22 +23,37 @@ import org.springframework.transaction.annotation.Transactional;
 public class VehicleInfoServiceImpl extends BaseServiceImpl<VehicleInfo, UUID> implements VehicleInfoService {
     private final VehicleInfoRepository vehicles;
     private final BrandRepository brands;
+    private final CatalogOwnership ownership;
+    private final UserVehicleRepository userVehicles;
 
-    public VehicleInfoServiceImpl(VehicleInfoRepository vehicles, BrandRepository brands) {
+    public VehicleInfoServiceImpl(VehicleInfoRepository vehicles, BrandRepository brands,
+            CatalogOwnership ownership,
+            UserVehicleRepository userVehicles) {
         super(vehicles);
         this.vehicles = vehicles;
         this.brands = brands;
+        this.ownership = ownership;
+        this.userVehicles = userVehicles;
     }
 
     @Override
-    public PaginatedResponse<VehicleInfoResponse> list(Pageable pageable) {
-        return PaginatedResponse.from(findAll(ordered(pageable)).map(VehicleInfoServiceImpl::toResponse));
+    public PaginatedResponse<VehicleInfoResponse> list(Pageable pageable, String keyword, UUID brandId) {
+        var page = vehicles.findAll((root, query, cb) -> {
+            var filters = cb.isNull(root.get("deletedAt"));
+            if (brandId != null) filters = cb.and(filters, cb.equal(root.get("brand").get("id"), brandId));
+            if (keyword != null && !keyword.isBlank()) {
+                filters = cb.and(filters, cb.gt(cb.locate(cb.lower(root.get("model")),
+                        keyword.strip().toLowerCase(java.util.Locale.ROOT)), 0));
+            }
+            return filters;
+        }, ordered(pageable));
+        return PaginatedResponse.from(page.map(VehicleInfoServiceImpl::toResponse));
     }
 
     @Override
     public PaginatedResponse<VehicleOptionResponse> options(Pageable pageable) {
         return PaginatedResponse.from(findAll(ordered(pageable))
-                .map(vehicle -> new VehicleOptionResponse(vehicle.getId(), vehicle.getBrand().getId(), vehicle.getModel())));
+                .map(vehicle -> new VehicleOptionResponse(vehicle.getId(), vehicle.getBrand().getId(), vehicle.getModel(), vehicle.getBrand().getName())));
     }
 
     @Override
@@ -48,6 +65,7 @@ public class VehicleInfoServiceImpl extends BaseServiceImpl<VehicleInfo, UUID> i
     @Transactional
     public VehicleInfoResponse create(VehicleInfoRequest request) {
         VehicleInfo vehicle = new VehicleInfo();
+        vehicle.setCreatedByUserId(ownership.operatorId());
         apply(vehicle, request);
         return toResponse(vehicles.saveAndFlush(vehicle));
     }
@@ -56,6 +74,7 @@ public class VehicleInfoServiceImpl extends BaseServiceImpl<VehicleInfo, UUID> i
     @Transactional
     public VehicleInfoResponse update(UUID id, VehicleInfoRequest request) {
         VehicleInfo vehicle = lockVehicle(id);
+        ownership.requireOwner(vehicle.getCreatedByUserId());
         apply(vehicle, request);
         vehicles.flush();
         return toResponse(vehicle);
@@ -64,7 +83,12 @@ public class VehicleInfoServiceImpl extends BaseServiceImpl<VehicleInfo, UUID> i
     @Override
     @Transactional
     public void delete(UUID id) {
-        lockVehicle(id).markDeleted(Instant.now());
+        VehicleInfo vehicle = lockVehicle(id);
+        ownership.requireOwner(vehicle.getCreatedByUserId());
+        if (userVehicles.existsByVehicleInfoIdAndDeletedAtIsNull(id)) {
+            throw new CustomBusinessException(ErrorCodes.CONFLICT, HttpStatus.CONFLICT);
+        }
+        vehicle.markDeleted(Instant.now());
     }
 
     private VehicleInfo lockVehicle(UUID id) {
@@ -86,6 +110,6 @@ public class VehicleInfoServiceImpl extends BaseServiceImpl<VehicleInfo, UUID> i
 
     private static VehicleInfoResponse toResponse(VehicleInfo vehicle) {
         return new VehicleInfoResponse(vehicle.getId(), vehicle.getBrand().getId(), vehicle.getModel(),
-                vehicle.getBatteryKwh(), vehicle.getRangeNedcKm(), vehicle.getCreatedAt(), vehicle.getUpdatedAt());
+                vehicle.getBatteryKwh(), vehicle.getRangeNedcKm(), vehicle.getCreatedAt(), vehicle.getUpdatedAt(), vehicle.getCreatedByUserId());
     }
 }

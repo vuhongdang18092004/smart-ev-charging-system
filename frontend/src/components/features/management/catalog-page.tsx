@@ -22,6 +22,9 @@ export function CatalogPage<Row extends { id: string }>({
   editTitle,
   fields,
   secondaryAction,
+  canEdit = () => true,
+  remove,
+  toolbar,
 }: CatalogPageProps<Row>) {
   const collection = useResource(load);
   const [dialog, setDialog] = useState<CatalogDialog<Row>>();
@@ -40,6 +43,7 @@ export function CatalogPage<Row extends { id: string }>({
         onAction={() => setDialog({ kind: "create" })}
       />
       <section className="rounded-2xl border border-line bg-white p-5 shadow-sm">
+        {toolbar}
         <ResourceFeedback {...collection} />
         {collection.data && (
           <>
@@ -55,11 +59,20 @@ export function CatalogPage<Row extends { id: string }>({
                   header: COPY.actions,
                   render: (row) => (
                     <div className="flex flex-wrap gap-2">
-                      <BaseButton
-                        onClick={() => setDialog({ kind: "edit", row })}
-                      >
-                        {COPY.editCatalogItem}
-                      </BaseButton>
+                      {canEdit(row) && (
+                        <BaseButton
+                          onClick={() => setDialog({ kind: "edit", row })}
+                        >
+                          {COPY.editCatalogItem}
+                        </BaseButton>
+                      )}
+                      {remove && canEdit(row) && (
+                        <BaseButton
+                          onClick={() => setDialog({ kind: "delete", row })}
+                        >
+                          {COPY.delete}
+                        </BaseButton>
+                      )}
                       {secondaryAction && (
                         <BaseButton
                           onClick={() => setDialog({ kind: "secondary", row })}
@@ -96,6 +109,21 @@ export function CatalogPage<Row extends { id: string }>({
             onSuccess={saved}
           >
             {fields(dialog.row)}
+          </ManagedForm>
+        </BaseModal>
+      )}
+      {dialog?.kind === "delete" && remove && (
+        <BaseModal
+          open
+          title={COPY.delete}
+          onClose={() => setDialog(undefined)}
+        >
+          <ManagedForm
+            submit={() => remove(dialog.row)}
+            submitLabel={COPY.delete}
+            onSuccess={saved}
+          >
+            <p>{COPY.confirmCatalogDelete}</p>
           </ManagedForm>
         </BaseModal>
       )}

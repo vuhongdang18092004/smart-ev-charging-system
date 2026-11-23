@@ -21,8 +21,9 @@ public class VehicleInfoController extends BaseController {
     private final VehicleInfoService service;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<PaginatedResponse<VehicleInfoResponse>>> list(Pageable pageable) {
-        return ok(service.list(pageable));
+    public ResponseEntity<ApiResponse<PaginatedResponse<VehicleInfoResponse>>> list(Pageable pageable, @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) UUID brandId) {
+        return ok(service.list(pageable, keyword, brandId));
     }
 
     @GetMapping("/{id}")

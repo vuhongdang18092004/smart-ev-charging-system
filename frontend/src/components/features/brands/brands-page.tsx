@@ -10,17 +10,29 @@ import {
   VALUE_LABELS,
 } from "@/constants/management";
 import { brandSchema, updateBrandSchema } from "@/schemas/management";
-import { createBrand, getBrands, updateBrand } from "@/services/brand-service";
+import {
+  createBrand,
+  deleteBrand,
+  getBrands,
+  updateBrand,
+} from "@/services/brand-service";
 import { valueOptions } from "@/utils/management-options";
 import { CatalogPage } from "../management/catalog-page";
 
-export function BrandsPage() {
+import { WEB_ROLE } from "@/constants/web-auth";
+import type { WebUser } from "@/types/web-auth";
+
+export function BrandsPage({ user }: { user: WebUser }) {
   return (
     <CatalogPage
       title={COPY.brands}
       description={COPY.brandDescription}
       action={COPY.addBrand}
       load={getBrands}
+      canEdit={(row) =>
+        user.role === WEB_ROLE.admin || row.created_by_user_id === user.id
+      }
+      remove={(row) => deleteBrand(row.id)}
       create={(form) =>
         createBrand(brandSchema.parse(Object.fromEntries(form)))
       }

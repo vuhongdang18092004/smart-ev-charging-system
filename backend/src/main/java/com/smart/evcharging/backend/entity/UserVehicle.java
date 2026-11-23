@@ -10,6 +10,9 @@ import lombok.Setter;
 @Entity
 @Table(name = "user_vehicles")
 public class UserVehicle extends BaseEntity {
+    @Column(nullable = false, length = 100)
+    private String name;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private UserAccount user;

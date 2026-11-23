@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/stations", "/api/stations/*/images", "/api/stations/*/connectors").hasAnyRole("ADMIN", "USER", "OPERATOR")
                         .requestMatchers(HttpMethod.PUT, "/api/stations/*", "/api/connectors/*").hasAnyRole("ADMIN", "USER", "OPERATOR")
                         .requestMatchers(HttpMethod.DELETE, "/api/stations/*", "/api/connectors/*", "/api/stations/*/images/*").hasAnyRole("ADMIN", "USER", "OPERATOR")
+                        .requestMatchers("/api/brands/**", "/api/vehicles-infor/**").hasAnyRole("ADMIN", "OPERATOR")
                         .anyRequest().hasAnyRole("ADMIN", "USER"))
                 .build();
     }
@@ -60,10 +61,10 @@ public class SecurityConfig {
         provider.setPasswordEncoder(PasswordEncoderFactories.createDelegatingPasswordEncoder());
 
         return base(http)
-                .securityMatcher("/api/vehicles-infor/**", "/api/user-vehicles/**", "/api/vehicle-options/**")
+                .securityMatcher("/api/brands/**", "/api/vehicles-infor/**", "/api/user-vehicles/**", "/api/vehicle-options/**")
                 .authenticationManager(new ProviderManager(provider))
                 .authorizeHttpRequests(rules -> rules
-                        .requestMatchers("/api/vehicles-infor/**").hasRole(DomainValues.ADMIN_AUTHORITY)
+                        .requestMatchers("/api/brands/**", "/api/vehicles-infor/**").hasAnyRole("ADMIN", "OPERATOR")
                         .requestMatchers("/api/user-vehicles/**").hasRole(DomainValues.DRIVER_AUTHORITY)
                         .requestMatchers(HttpMethod.GET, "/api/vehicle-options").hasRole(DomainValues.DRIVER_AUTHORITY)
                         .anyRequest().denyAll())

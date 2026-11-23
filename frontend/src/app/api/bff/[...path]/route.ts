@@ -26,7 +26,7 @@ const knownRoutes: Record<string, RegExp> = {
     "i",
   ),
   DELETE: new RegExp(
-    `^(?:(?:stations|connectors|reviews|vehicles-infor)/${uuid}|${station}/images/${uuid})$`,
+    `^(?:(?:brands|stations|connectors|reviews|vehicles-infor)/${uuid}|${station}/images/${uuid})$`,
     "i",
   ),
 };

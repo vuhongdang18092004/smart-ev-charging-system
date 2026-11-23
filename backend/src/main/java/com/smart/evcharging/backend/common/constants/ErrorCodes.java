@@ -1,6 +1,7 @@
 package com.smart.evcharging.backend.common.constants;
 
 public final class ErrorCodes {
+    public static final String CATALOG_OWNER_REQUIRED = "error.catalog-owner-required";
     public static final String CONFLICT = "error.conflict";
     public static final String DRIVER_REQUIRED = "error.driver-required";
     public static final String INVALID_VEHICLE_INFO = "error.invalid-vehicle-info";

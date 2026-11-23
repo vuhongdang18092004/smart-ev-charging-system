@@ -30,6 +30,7 @@ export interface BrandSummary {
   type: BrandType | null;
 }
 export interface Brand extends BrandSummary {
+  created_by_user_id?: string | null;
   logo_url: string | null;
   website: string | null;
 }
@@ -152,7 +153,7 @@ export interface AllowedBrandsRequest {
   brandIds: string[];
 }
 export interface StationRequest {
-  operator_id: string;
+  operator_id?: string;
   brand_id: string;
   name: string;
   address: string;

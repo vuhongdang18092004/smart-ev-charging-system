@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 public interface VehicleInfoService {
     VehicleInfoResponse create(VehicleInfoRequest request);
     VehicleInfoResponse detail(UUID id);
-    PaginatedResponse<VehicleInfoResponse> list(Pageable pageable);
+    PaginatedResponse<VehicleInfoResponse> list(Pageable pageable, String keyword, UUID brandId);
     VehicleInfoResponse update(UUID id, VehicleInfoRequest request);
     void delete(UUID id);
     PaginatedResponse<VehicleOptionResponse> options(Pageable pageable);

@@ -1,4 +1,5 @@
 export const COPY = {
+  confirmCatalogDelete: "Bạn có chắc muốn xóa mục này?",
   app: "ChargeOps",
   subtitle: "Quản lý mạng lưới sạc",
   workspace: "Không gian quản trị",

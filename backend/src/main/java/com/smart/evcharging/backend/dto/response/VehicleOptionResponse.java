@@ -2,4 +2,4 @@ package com.smart.evcharging.backend.dto.response;
 
 import java.util.UUID;
 
-public record VehicleOptionResponse(UUID id, UUID brandId, String model) {}
+public record VehicleOptionResponse(UUID id, UUID brandId, String model, String brandName) {}

@@ -9,7 +9,13 @@ import { WEB_AUTH_COPY, WEB_AUTH_ROUTES, WEB_ROLE } from "@/constants/web-auth";
 import { webAuth } from "@/services/web-auth-service";
 import type { ManagementShellProps } from "@/types/web-auth";
 
+import {
+  VEHICLE_INFO_COPY,
+  VEHICLE_INFO_ROUTE,
+} from "@/constants/vehicle-info";
+
 const navigation = [
+  { href: VEHICLE_INFO_ROUTE, label: VEHICLE_INFO_COPY.title },
   { href: ROUTES.stations, label: COPY.stations },
   { href: ROUTES.brands, label: COPY.brands },
   { href: ROUTES.connectorTypes, label: COPY.connectorTypes },
@@ -23,7 +29,11 @@ export function ManagementShell({ children, user }: ManagementShellProps) {
   const links =
     user.role === WEB_ROLE.admin
       ? navigation
-      : navigation.filter((item) => item.href === ROUTES.stations);
+      : navigation.filter((item) =>
+          [ROUTES.stations, ROUTES.brands, VEHICLE_INFO_ROUTE].some(
+            (href) => href === item.href,
+          ),
+        );
 
   async function signOut() {
     setSigningOut(true);

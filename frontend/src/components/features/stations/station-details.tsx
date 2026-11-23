@@ -233,6 +233,7 @@ export function StationDetails({
           wide
         >
           <StationForm
+            operatorLocked={!canManageFeedback}
             station={station}
             brands={brands}
             operators={operators}

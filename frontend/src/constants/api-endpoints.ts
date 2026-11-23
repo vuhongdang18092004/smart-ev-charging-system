@@ -1,6 +1,8 @@
 export const API_ENDPOINTS = {
   stations: "/stations",
   brands: "/brands",
+  vehicleInfoList: "/vehicles-infor",
+  vehicleInfo: (id: string) => `/vehicles-infor/${encodeURIComponent(id)}`,
   connectorTypes: "/connector-types",
   operators: "/operators",
   inviteOperator: "/admin/operators",

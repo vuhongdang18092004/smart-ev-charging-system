@@ -18,6 +18,7 @@ public interface CatalogService {
     BrandResponse createBrand(BrandRequest request);
     ConnectorTypeResponse createConnectorType(ConnectorTypeRequest request);
     OperatorResponse createOperator(OperatorRequest request);
+    void deleteBrand(UUID id);
     BrandResponse updateBrand(UUID id, BrandRequest request);
     ConnectorTypeResponse updateConnectorType(UUID id, ConnectorTypeRequest request);
     OperatorResponse updateOperator(UUID id, UpdateOperatorRequest request);

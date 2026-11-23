@@ -173,7 +173,7 @@ export const stationImageSchema = z.object({
   sort_order: mediaSortSchema,
 });
 export const stationSchema = z.object({
-  operator_id: id,
+  operator_id: id.optional(),
   brand_id: id,
   name: text(200),
   address: text(500),

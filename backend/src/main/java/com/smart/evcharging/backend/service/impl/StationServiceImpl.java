@@ -36,15 +36,18 @@ public class StationServiceImpl extends BaseServiceImpl<Station, UUID> implement
     private final ConnectorTypeRepository connectorTypes;
     private final BrandRepository brands;
     private final UserAccountRepository users;
+    private final OperatorProfileRepository profiles;
 
     public StationServiceImpl(StationRepository stations, ConnectorRepository connectors,
-            ConnectorTypeRepository connectorTypes, BrandRepository brands, UserAccountRepository users) {
+            ConnectorTypeRepository connectorTypes, BrandRepository brands, UserAccountRepository users,
+            OperatorProfileRepository profiles) {
         super(stations);
         this.stations = stations;
         this.connectors = connectors;
         this.connectorTypes = connectorTypes;
         this.brands = brands;
         this.users = users;
+        this.profiles = profiles;
     }
 
     @Override
@@ -222,7 +225,9 @@ public class StationServiceImpl extends BaseServiceImpl<Station, UUID> implement
                 .noneMatch(authority -> authority.getAuthority().equals("ROLE_OPERATOR"))) {
             return null;
         }
-        return users.findLoginId(authentication.getName()).orElseThrow(StationServiceImpl::notFound);
+        UUID id = users.findLoginId(authentication.getName()).orElseThrow(StationServiceImpl::notFound);
+        if (!profiles.existsById(id)) throw notFound();
+        return id;
     }
 
     private void requireOwner(Station station) {
@@ -239,10 +244,12 @@ public class StationServiceImpl extends BaseServiceImpl<Station, UUID> implement
 
     private void applyStation(Station station, StationRequest request) {
         UUID operatorId = currentOperatorId();
-        if (operatorId != null && !operatorId.equals(request.operatorId())) {
+        if (operatorId != null && request.operatorId() != null && !operatorId.equals(request.operatorId())) {
             throw new AccessDeniedException(ErrorCodes.OPERATOR_NOT_FOUND);
         }
-        station.setOperator(users.findByIdAndRoleAndDeletedAtIsNull(request.operatorId(), DomainValues.OPERATOR)
+        UUID ownerId = operatorId == null ? request.operatorId() : operatorId;
+        if (ownerId == null) throw invalidReference(ErrorCodes.INVALID_OPERATOR);
+        station.setOperator(users.findByIdAndRoleAndDeletedAtIsNull(ownerId, DomainValues.OPERATOR)
                 .orElseThrow(() -> invalidReference(ErrorCodes.INVALID_OPERATOR)));
         station.setBrand(brands.findById(request.brandId())
                 .orElseThrow(() -> invalidReference(ErrorCodes.INVALID_BRAND)));

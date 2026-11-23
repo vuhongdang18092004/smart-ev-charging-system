@@ -1,5 +1,6 @@
 package com.smart.evcharging.backend.service.impl;
 
+import com.smart.evcharging.backend.dto.response.VehicleOptionResponse;
 import com.smart.evcharging.backend.common.constants.DomainValues;
 import com.smart.evcharging.backend.common.constants.ErrorCodes;
 import com.smart.evcharging.backend.common.exception.CustomBusinessException;
@@ -48,6 +49,7 @@ public class UserVehicleServiceImpl implements UserVehicleService {
         UserVehicle vehicle = new UserVehicle();
         vehicle.setUser(driver(email));
         vehicle.setVehicleInfo(activeOption(request.vehicleInfoId()));
+        applyName(vehicle, request.name());
         return toResponse(vehicles.saveAndFlush(vehicle));
     }
 
@@ -58,6 +60,7 @@ public class UserVehicleServiceImpl implements UserVehicleService {
         if (!vehicle.getVehicleInfo().getId().equals(request.vehicleInfoId())) {
             vehicle.setVehicleInfo(activeOption(request.vehicleInfoId()));
         }
+        if (request.name() != null) applyName(vehicle, request.name());
         vehicles.flush();
         return toResponse(vehicle);
     }
@@ -66,6 +69,10 @@ public class UserVehicleServiceImpl implements UserVehicleService {
     @Transactional
     public void delete(String email, UUID id) {
         lockOwned(email, id).markDeleted(Instant.now());
+    }
+
+    private static void applyName(UserVehicle vehicle, String name) {
+        vehicle.setName(name == null || name.isBlank() ? vehicle.getVehicleInfo().getModel() : name.strip());
     }
 
     private UserVehicle lockOwned(String email, UUID id) {
@@ -85,8 +92,11 @@ public class UserVehicleServiceImpl implements UserVehicleService {
     }
 
     private static UserVehicleResponse toResponse(UserVehicle vehicle) {
-        return new UserVehicleResponse(vehicle.getId(), vehicle.getUser().getId(), vehicle.getVehicleInfo().getId(),
-                vehicle.getCreatedAt(), vehicle.getUpdatedAt());
+        var model = vehicle.getVehicleInfo();
+        var option = new VehicleOptionResponse(
+                model.getId(), model.getBrand().getId(), model.getModel(), model.getBrand().getName());
+        return new UserVehicleResponse(vehicle.getId(), vehicle.getUser().getId(), model.getId(),
+                vehicle.getCreatedAt(), vehicle.getUpdatedAt(), option, vehicle.getName());
     }
 
     private static CustomBusinessException notFound() {

@@ -11,6 +11,8 @@ import org.springframework.data.jpa.repository.*;
 public interface UserVehicleRepository extends JpaRepository<UserVehicle, UUID> {
     Page<UserVehicle> findByUserIdAndDeletedAtIsNull(UUID userId, Pageable pageable);
 
+    boolean existsByVehicleInfoIdAndDeletedAtIsNull(UUID vehicleInfoId);
+
     Optional<UserVehicle> findByIdAndUserIdAndDeletedAtIsNull(UUID id, UUID userId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

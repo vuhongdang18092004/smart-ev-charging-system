@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record StationRequest(
-        @NotNull UUID operatorId,
+        UUID operatorId,
         @NotNull UUID brandId,
         @NotBlank @Size(max = 200) String name,
         @NotBlank @Size(max = 500) String address,

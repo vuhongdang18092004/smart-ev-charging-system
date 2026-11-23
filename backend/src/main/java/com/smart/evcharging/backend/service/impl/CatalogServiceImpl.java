@@ -1,5 +1,6 @@
 package com.smart.evcharging.backend.service.impl;
 
+import com.smart.evcharging.backend.service.CatalogOwnership;
 import com.smart.evcharging.backend.common.constants.DomainValues;
 import com.smart.evcharging.backend.common.constants.ErrorCodes;
 import com.smart.evcharging.backend.common.exception.CustomBusinessException;
@@ -31,6 +32,7 @@ public class CatalogServiceImpl implements CatalogService {
     private static final Comparator<Brand> BRAND_ORDER = Comparator.comparing(Brand::getName)
             .thenComparing(Brand::getId);
     private final BrandRepository brands;
+    private final CatalogOwnership ownership;
     private final ConnectorTypeRepository connectorTypes;
     private final UserAccountRepository users;
     private final OperatorProfileRepository profiles;
@@ -60,6 +62,7 @@ public class CatalogServiceImpl implements CatalogService {
     @Transactional
     public BrandResponse createBrand(BrandRequest request) {
         Brand brand = new Brand();
+        brand.setCreatedByUserId(ownership.operatorId());
         brand.setType(DomainValues.DEFAULT_BRAND_TYPE);
         applyBrand(brand, request);
         return toBrand(brands.save(brand));
@@ -69,11 +72,21 @@ public class CatalogServiceImpl implements CatalogService {
     @Transactional
     public BrandResponse updateBrand(UUID id, BrandRequest request) {
         Brand brand = brands.findById(id).orElseThrow(CatalogServiceImpl::notFound);
+        ownership.requireOwner(brand.getCreatedByUserId());
         if (brands.existsByNameAndIdNot(request.name().strip(), id)) {
             throw new CustomBusinessException(ErrorCodes.DUPLICATE_BRAND_NAME, HttpStatus.CONFLICT);
         }
         applyBrand(brand, request);
         return toBrand(brand);
+    }
+
+    @Override
+    @Transactional
+    public void deleteBrand(UUID id) {
+        Brand brand = brands.findById(id).orElseThrow(CatalogServiceImpl::notFound);
+        ownership.requireOwner(brand.getCreatedByUserId());
+        brands.delete(brand);
+        brands.flush();
     }
 
     private static void applyBrand(Brand brand, BrandRequest request) {
@@ -228,7 +241,7 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     private static BrandResponse toBrand(Brand brand) {
-        return new BrandResponse(brand.getId(), brand.getName(), brand.getType(), brand.getLogoUrl(), brand.getWebsite());
+        return new BrandResponse(brand.getId(), brand.getName(), brand.getType(), brand.getLogoUrl(), brand.getWebsite(), brand.getCreatedByUserId());
     }
 
     private static ConnectorTypeResponse toConnectorType(ConnectorType type) {

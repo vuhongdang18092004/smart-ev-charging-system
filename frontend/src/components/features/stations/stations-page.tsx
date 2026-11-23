@@ -255,6 +255,7 @@ export function StationsPage({ user }: { user: WebUser }) {
           onClose={() => setCreating(false)}
         >
           <StationForm
+            operatorLocked={!admin}
             brands={brandItems}
             operators={operatorItems}
             types={connectorTypes}

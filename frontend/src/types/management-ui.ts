@@ -49,6 +49,9 @@ export interface CatalogPageProps<Row> {
   update: (row: Row, form: FormData) => Promise<unknown>;
   editTitle: string;
   fields: (row?: Row) => ReactNode;
+  canEdit?: (row: Row) => boolean;
+  remove?: (row: Row) => Promise<unknown>;
+  toolbar?: ReactNode;
   secondaryAction?: CatalogSecondaryAction<Row>;
 }
 
@@ -58,7 +61,7 @@ interface CatalogSecondaryAction<Row> {
 }
 
 export type CatalogDialog<Row> =
-  { kind: "create" } | { kind: "edit" | "secondary"; row: Row };
+  { kind: "create" } | { kind: "edit" | "secondary" | "delete"; row: Row };
 
 export interface AllowedBrandsFormProps {
   operatorId: string;
@@ -71,6 +74,7 @@ interface StationReferences {
   types: ConnectorType[];
 }
 export interface StationFormProps extends StationReferences {
+  operatorLocked?: boolean;
   station?: Station;
   onSuccess: () => void;
 }

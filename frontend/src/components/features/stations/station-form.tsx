@@ -36,6 +36,7 @@ const imagePrefix = (row: number) => `image-${row}-`;
 
 export function StationForm({
   station,
+  operatorLocked,
   brands,
   operators,
   types,
@@ -104,16 +105,18 @@ export function StationForm({
           defaultValue={station?.brand_id ?? ""}
           options={[{ value: "", label: COPY.select }, ...namedOptions(brands)]}
         />
-        <BaseSelect
-          label={COPY.operator}
-          name="operator_id"
-          required
-          defaultValue={station?.operator_id ?? ""}
-          options={[
-            { value: "", label: COPY.select },
-            ...namedOptions(operators),
-          ]}
-        />
+        {!operatorLocked && (
+          <BaseSelect
+            label={COPY.operator}
+            name="operator_id"
+            required
+            defaultValue={station?.operator_id ?? ""}
+            options={[
+              { value: "", label: COPY.select },
+              ...namedOptions(operators),
+            ]}
+          />
+        )}
         <BaseInput
           label={COPY.lat}
           name="lat"

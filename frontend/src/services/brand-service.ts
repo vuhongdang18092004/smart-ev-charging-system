@@ -18,6 +18,10 @@ export async function createBrand(body: BrandRequest) {
     .data.data;
 }
 
+export async function deleteBrand(id: string) {
+  await axiosClient.delete(API_ENDPOINTS.brand(id));
+}
+
 export async function updateBrand(id: string, body: UpdateBrandRequest) {
   return (
     await axiosClient.put<ApiSuccess<Brand>>(API_ENDPOINTS.brand(id), body)

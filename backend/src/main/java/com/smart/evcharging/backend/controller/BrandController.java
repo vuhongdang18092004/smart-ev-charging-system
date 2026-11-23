@@ -30,6 +30,12 @@ public class BrandController extends BaseController {
         return ok(service.updateBrand(id, request));
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        service.deleteBrand(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<BrandResponse>> create(
             @Valid @RequestBody BrandRequest request) {

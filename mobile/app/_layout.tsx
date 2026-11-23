@@ -6,6 +6,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthStatusScreen } from '@/src/features/auth/screens/AuthStatusScreen';
+import { VEHICLE_COPY } from '@/src/features/vehicles/constants';
 import { AuthProvider, useAuth } from '@/src/providers/AuthProvider';
 
 function RootNavigator() {
@@ -22,6 +23,7 @@ function RootNavigator() {
             </Stack.Protected>
             <Stack.Protected guard={state.status === 'authenticated'}>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="vehicles" options={{ title: VEHICLE_COPY.title }} />
               <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
             </Stack.Protected>
           </Stack>

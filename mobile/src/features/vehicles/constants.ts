@@ -1,0 +1,27 @@
+export const VEHICLES_ROUTE = '/vehicles' as const;
+export const VEHICLE_NAME_MAX_LENGTH = 100;
+export const VEHICLE_COPY = {
+  title: 'Xe của tôi',
+  add: 'Thêm xe',
+  detail: 'Chi tiết xe',
+  edit: 'Sửa xe',
+  remove: 'Xóa xe',
+  confirm: 'Xóa xe này khỏi tài khoản?',
+  cancel: 'Hủy',
+  save: 'Lưu',
+  empty: 'Bạn chưa thêm xe nào.',
+  loading: 'Đang tải danh sách xe...',
+  error: 'Không thể tải danh sách xe.',
+  saveError: 'Không thể lưu thay đổi.',
+  notFound: 'Xe không còn trong tài khoản.',
+  forbidden: 'Tài khoản không có quyền thực hiện.',
+  retry: 'Thử lại',
+  brand: 'Chọn hãng xe',
+  name: 'Tên xe của bạn',
+  namePlaceholder: 'Mặc định theo tên mẫu xe',
+  model: 'Chọn mẫu xe',
+  unavailable: 'Mẫu xe không còn trong danh mục.',
+  noOptions: 'Chưa có mẫu xe trong danh mục.',
+  saved: 'Đã lưu xe.',
+  removed: 'Đã xóa xe.',
+};

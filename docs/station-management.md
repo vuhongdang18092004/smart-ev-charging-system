@@ -4,9 +4,11 @@ Chạy thêm migration V5 sau V4. V5 chuyển giá từ cổng lên trạm, gi�
 
 Request và response trạm có `price_per_kwh` và `phone`. Khi sửa trạm, bỏ qua hai trường này để giữ giá và số điện thoại hiện tại. Gửi `phone` rỗng để xóa số điện thoại. Hợp đồng connector sử dụng các trường riêng của cổng, còn giá nằm trong response trạm. Frontend cũ cần chuyển thao tác giá sang form trạm.
 
-ADMIN dùng `/api/vehicles-infor` để quản lý danh mục xe. DRIVER quản lý xe của chính mình qua `/api/user-vehicles` và chọn mẫu qua `GET /api/vehicle-options`, trả ID, ID thương hiệu và tên mẫu. Các API này dùng HTTP Basic. Tài khoản trong `users` đăng nhập bằng email, cần trạng thái `active` và mật khẩu BCrypt. Tài khoản quản trị cấu hình hiện có vẫn truy cập được danh mục. Xóa xe hoặc mẫu xe là xóa mềm. Mẫu xe đã xóa được loại khỏi danh sách chọn, còn liên kết đã tạo của tài xế được giữ.
+ADMIN quản lý toàn bộ danh mục qua `/api/brands` và `/api/vehicles-infor`. OPERATOR đọc và tạo bản ghi trong danh mục dùng chung, đồng thời chỉ sửa hoặc xóa bản ghi do chính mình tạo. Các bản ghi cũ có `created_by_user_id = NULL` và ADMIN quản lý. Xóa hãng còn liên kết trạm, mẫu xe hoặc chính sách sạc trả `409`. Xóa mẫu xe là xóa mềm và trả `409` khi còn xe cá nhân đang sử dụng.
 
-Backend yêu cầu PostgreSQL có schema từ `backend/src/main/resources/db/migration/`. Chạy các migration chưa áp dụng theo thứ tự V1 đến V5 trước khi khởi động. V2 và V3 xóa `user_vehicles` nếu bảng còn tồn tại. V3 thêm thông tin trạm, các bảng media và tính lại điểm từ review hiện có. V4 chuyển tọa độ sang `DOUBLE PRECISION` và tách số lượng cổng cũ thành các bản ghi riêng. Backend sử dụng Hibernate ở chế độ `validate`. Đặt `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME` và `DB_PASSWORD` trong môi trường backend.
+DRIVER dùng `GET /api/vehicle-options` để chọn mẫu xe và `/api/user-vehicles` để quản lý xe cá nhân. API dùng phiên JWT hiện có và kiểm tra chủ xe theo tài khoản đã xác thực. Xóa xe cá nhân là xóa mềm. V8 thêm tên riêng cho xe cá nhân và điền tên xe cũ từ tên mẫu xe. POST và PUT nhận `name` tối đa 100 ký tự. Khi tạo, bỏ trống để dùng tên mẫu. Khi sửa, bỏ qua trường `name` để giữ tên hiện tại hoặc gửi chuỗi rỗng để dùng lại tên mẫu.
+
+Backend yêu cầu PostgreSQL có schema từ `backend/src/main/resources/db/migration/`. Chạy các migration chưa áp dụng theo thứ tự đến V8 trước khi khởi động. V2 và V3 xóa `user_vehicles` nếu bảng còn tồn tại. V3 thêm thông tin trạm, các bảng media và tính lại điểm từ review hiện có. V4 chuyển tọa độ sang `DOUBLE PRECISION` và tách số lượng cổng cũ thành các bản ghi riêng. Backend sử dụng Hibernate ở chế độ `validate`. Đặt `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME` và `DB_PASSWORD` trong môi trường backend.
 
 Cấu hình tài khoản quản trị bằng `SPRING_SECURITY_USER_NAME` và `SPRING_SECURITY_USER_PASSWORD`. Dùng tài khoản này đăng nhập trên frontend. API quản lý dùng HTTP Basic và cần HTTPS khi triển khai ngoài localhost. Thông tin đăng nhập chỉ được giữ trong bộ nhớ của tab. API tạo operator lưu tài khoản có vai trò `operator` và hồ sơ operator trong cùng transaction, với mật khẩu được băm bằng BCrypt.
 
@@ -19,3 +21,15 @@ Mỗi connector là một cổng riêng. Mỗi nhóm trong `connectors` khi tạ
 GET danh sách trạm hỗ trợ thêm hai tham số `locationType` và `parkingFeeType`. Response trạm có `location_type`, `parking_fee_type`, `avg_rating`, `rating_count` và `images`. Khi tạo trạm, có thể gửi `images` ở cấp ngoài hoặc trong `station`. Khi sửa trạm, bỏ qua `images` để giữ ảnh cũ hoặc gửi `[]` để xóa hết ảnh. Có thể thêm và xóa riêng ảnh qua `/api/stations/{stationId}/images`.
 
 Review được tạo và liệt kê qua `/api/stations/{stationId}/reviews`, còn đọc, sửa và xóa từng review qua `/api/reviews/{id}`. Báo cáo được tạo và liệt kê qua `/api/stations/{stationId}/reports`, với chi tiết tại `/api/station-reports/{id}`. Khi tạo review hoặc báo cáo, tài khoản quản trị gửi `driver_id` của một user có vai trò driver. Ảnh và video được lưu dưới dạng URL HTTP(S). Khi sửa review, bỏ qua `media` để giữ đính kèm hiện tại hoặc gửi `[]` để xóa hết. Các lần ghi review qua API tính lại điểm và số lượt đánh giá trong cùng transaction.
+
+Khi OPERATOR tạo hoặc sửa trạm, backend lấy ID đơn vị vận hành từ tài khoản đã xác thực. Có thể bỏ `operator_id` khỏi request của OPERATOR. ADMIN vẫn chỉ định chủ trạm. Quyền quản lý ảnh và connector kế thừa quyền trên trạm.
+
+Trước khi duyệt áp dụng V7 lên PostgreSQL đang dùng, kiểm tra lịch sử Flyway và chạy truy vấn sau trên bản sao đã phục hồi. Nếu có kết quả, xử lý từng nhóm trùng theo các tham chiếu xe cá nhân trước khi tạo index.
+
+```sql
+SELECT brand_id, lower(btrim(model)) AS normalized_model, array_agg(id) AS model_ids
+FROM vehicles_infor
+WHERE deleted_at IS NULL
+GROUP BY brand_id, lower(btrim(model))
+HAVING count(*) > 1;
+```
