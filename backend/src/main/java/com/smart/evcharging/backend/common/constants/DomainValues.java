@@ -6,6 +6,7 @@ public final class DomainValues {
     public static final String STATION_STATUSES = "open|closed|temporarily_closed|maintenance";
     public static final String OPERATOR_ACCESS_TYPES = "open_to_all|closed|open_to_specific|unknown";
     public static final String STATION_ACCESS_TYPES = OPERATOR_ACCESS_TYPES + "|inherit";
+    public static final String ADMIN = "admin";
     public static final String OPERATOR = "operator";
     public static final String ADMIN_AUTHORITY = "ADMIN";
     public static final String DRIVER_AUTHORITY = "DRIVER";

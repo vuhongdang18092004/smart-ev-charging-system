@@ -130,7 +130,7 @@ class AuthIntegrationTests {
             UUID vehicle = jdbc.sql("insert into " + schema + ".user_vehicles(user_id,vehicle_info_id) values(?,?) returning id")
                     .params(driver, model).query(UUID.class).single();
 
-            assertEquals(2, org.flywaydb.core.Flyway.configure().dataSource(isolated).schemas(schema)
+            assertEquals(3, org.flywaydb.core.Flyway.configure().dataSource(isolated).schemas(schema)
                     .load().migrate().migrationsExecuted);
             assertEquals(1L, jdbc.sql("select count(*) from " + schema + ".brands where id=? and created_by_user_id is null")
                     .param(brand).query(Long.class).single());
@@ -215,13 +215,58 @@ class AuthIntegrationTests {
         assertEquals(204, request(model, "DELETE", "", ownerToken));
     }
 
+    @Test
+    void blogWorkflowEnforcesOwnershipAndPublishedVisibility() throws Exception {
+        String admin = fixtureSession("admin").accessToken();
+        AuthSessionResponse author = fixtureSession("operator");
+        AuthSessionResponse other = fixtureSession("operator");
+        String operator = author.accessToken();
+        String driver = fixtureSession("driver").accessToken();
+        String management = "/api/blog-posts";
+        String published = "/api/public/blog-posts";
+        String content = """
+                {"title":"Blog Fixture","content":"Post body","status":"%s"}
+                """;
+        assertEquals(200, get(published, null));
+        assertEquals(401, get(management, null));
+        assertEquals(403, get(management, driver));
+        assertEquals(403, request(management, "POST", content.formatted("PUBLISHED"), operator));
+        assertEquals(201, request(management, "POST", content.formatted("DRAFT"), operator));
+        String post = management + "/" + jdbc.sql("select id from blog_posts where author_id=?")
+                .param(author.user().id()).query(UUID.class).single();
+        String publicPost = published + "/blog-fixture";
+        assertEquals(404, get(publicPost, null));
+        assertEquals(403, get(post, other.accessToken()));
+        assertEquals(403, request(post, "DELETE", "", other.accessToken()));
+        assertEquals(400, request(post + "/approve", "POST", "", admin));
+        assertEquals(200, request(post + "/submit", "POST", "", operator));
+        assertEquals(403, request(post, "PUT", content.formatted("PENDING_REVIEW"), operator));
+        assertEquals(403, request(post + "/approve", "POST", "", operator));
+        assertEquals(400, request(post + "/reject", "POST", "{\"rejectionReason\":\"  \"}", admin));
+        assertEquals(200, request(post + "/reject", "POST", "{\"rejectionReason\":\"Revise\"}", admin));
+        assertEquals(200, request(post + "/submit", "POST", "", operator));
+        assertEquals(200, request(post + "/approve", "POST", "", admin));
+        assertEquals(400, request(post + "/approve", "POST", "", admin));
+        assertEquals(200, get(publicPost, null));
+        assertEquals(200, request(post, "PUT", content.formatted("ARCHIVED"), admin));
+        assertEquals(404, get(publicPost, null));
+        assertEquals(204, request(post, "DELETE", "", admin));
+        assertEquals(404, get(post, admin));
+
+        assertEquals(201, request(management, "POST", content.formatted("PUBLISHED"), admin));
+        assertEquals(200, get(published + "/blog-fixture-2", null));
+    }
+
     private String vehicleName(UUID id) {
         return jdbc.sql("select name from user_vehicles where id=?").param(id).query(String.class).single();
     }
 
     private AuthSessionResponse fixtureSession(String role) {
-        String email = UUID.randomUUID() + "@example.test";
         String password = "fixture-test-password";
+        String email = role.equals("admin") ? "fixture-admin@example.test" : UUID.randomUUID() + "@example.test";
+        if (role.equals("admin") && jdbc.sql("select count(*) from users where email=?").param(email).query(Long.class).single() > 0) {
+            return auth.login(new Login(email, password, "web"));
+        }
         String hash = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode(password);
         jdbc.sql("insert into users(name,email,password_hash,role,email_verified) values(?,?,?,?,true)")
                 .params("Fixture " + role, email, hash, role).update();
@@ -324,8 +369,9 @@ class AuthIntegrationTests {
     }
 
     private int request(String path, String method, String body, String token) throws Exception {
-        var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
-                .header("Authorization", "Bearer " + token).header("Content-Type", "application/json")
+        var builder = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path));
+        if (token != null) builder.header("Authorization", "Bearer " + token);
+        var request = builder.header("Content-Type", "application/json")
                 .method(method, body.isEmpty() ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(body))
                 .build();
         try (var client = HttpClient.newHttpClient()) {

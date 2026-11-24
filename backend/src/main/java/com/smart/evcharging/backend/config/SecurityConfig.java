@@ -21,6 +21,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration(proxyBeanMethods = false)
 public class SecurityConfig {
+    private static final String BLOG_MANAGEMENT = "/api/blog-posts/**";
+    private static final String PUBLIC_BLOG = "/api/public/blog-posts/**";
+    private static final String BLOG_APPROVE = "/api/blog-posts/*/approve";
+    private static final String BLOG_REJECT = "/api/blog-posts/*/reject";
+    private static final String BLOG_SUBMIT = "/api/blog-posts/*/submit";
+
     @Bean
     @Order(0)
     @ConditionalOnProperty(name="app.auth.enabled", havingValue="true")
@@ -40,6 +46,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/verify-email",
                                 "/api/auth/resend-otp", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout",
                                 "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
+                        .requestMatchers(HttpMethod.GET, PUBLIC_BLOG).permitAll()
+                        .requestMatchers(HttpMethod.POST, BLOG_APPROVE, BLOG_REJECT).hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, BLOG_SUBMIT).hasRole("OPERATOR")
+                        .requestMatchers(BLOG_MANAGEMENT).hasAnyRole("ADMIN", "OPERATOR")
                         .requestMatchers("/api/auth/me").hasAnyRole("ADMIN", "OPERATOR", "DRIVER")
                         .requestMatchers(HttpMethod.POST, "/api/operators").denyAll()
                         .requestMatchers("/api/user-vehicles/**", "/api/vehicle-options").hasRole("DRIVER")
@@ -61,10 +71,12 @@ public class SecurityConfig {
         provider.setPasswordEncoder(PasswordEncoderFactories.createDelegatingPasswordEncoder());
 
         return base(http)
-                .securityMatcher("/api/brands/**", "/api/vehicles-infor/**", "/api/user-vehicles/**", "/api/vehicle-options/**")
+                .securityMatcher(BLOG_MANAGEMENT, "/api/brands/**", "/api/vehicles-infor/**", "/api/user-vehicles/**", "/api/vehicle-options/**")
                 .authenticationManager(new ProviderManager(provider))
                 .authorizeHttpRequests(rules -> rules
-                        .requestMatchers("/api/brands/**", "/api/vehicles-infor/**").hasAnyRole("ADMIN", "OPERATOR")
+                        .requestMatchers(HttpMethod.POST, BLOG_APPROVE, BLOG_REJECT).hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, BLOG_SUBMIT).hasRole("OPERATOR")
+                        .requestMatchers(BLOG_MANAGEMENT, "/api/brands/**", "/api/vehicles-infor/**").hasAnyRole("ADMIN", "OPERATOR")
                         .requestMatchers("/api/user-vehicles/**").hasRole(DomainValues.DRIVER_AUTHORITY)
                         .requestMatchers(HttpMethod.GET, "/api/vehicle-options").hasRole(DomainValues.DRIVER_AUTHORITY)
                         .anyRequest().denyAll())
@@ -74,7 +86,9 @@ public class SecurityConfig {
     @Bean
     @ConditionalOnProperty(name="app.auth.enabled", havingValue="false", matchIfMissing=true)
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return base(http).authorizeHttpRequests(rules -> rules.anyRequest().authenticated()).build();
+        return base(http).authorizeHttpRequests(rules -> rules
+                .requestMatchers(HttpMethod.GET, PUBLIC_BLOG).permitAll()
+                .anyRequest().authenticated()).build();
     }
 
     private static HttpSecurity base(HttpSecurity http) throws Exception {
