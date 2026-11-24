@@ -1,6 +1,10 @@
 export const API_ENDPOINTS = {
   stations: "/stations",
   brands: "/brands",
+  blogPosts: "/blog-posts",
+  blogPost: (id: string) => `/blog-posts/${encodeURIComponent(id)}`,
+  blogPostAction: (id: string, action: "submit" | "approve" | "reject") =>
+    `/blog-posts/${encodeURIComponent(id)}/${action}`,
   vehicleInfoList: "/vehicles-infor",
   vehicleInfo: (id: string) => `/vehicles-infor/${encodeURIComponent(id)}`,
   connectorTypes: "/connector-types",
