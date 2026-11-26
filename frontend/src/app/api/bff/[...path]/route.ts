@@ -11,23 +11,24 @@ import {
 } from "@/lib/server/web-session";
 
 const uuid = "[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}";
+const voucher = `vouchers/${uuid}`;
 const blogPost = `blog-posts/${uuid}`;
 const station = `stations/${uuid}`;
 const knownRoutes: Record<string, RegExp> = {
   GET: new RegExp(
-    `^(?:brands|connector-types|operators(?:/${uuid}/allowed-brands)?|stations|${station}(?:/(?:reviews|reports))?|reviews/${uuid}|station-reports/${uuid}|vehicles-infor(?:/${uuid})?|blog-posts|${blogPost})$`,
+    `^(?:brands|connector-types|operators(?:/${uuid}/allowed-brands)?|stations|${station}(?:/(?:reviews|reports))?|reviews/${uuid}|station-reports/${uuid}|vehicles-infor(?:/${uuid})?|blog-posts|${blogPost}|vouchers|${voucher})$`,
     "i",
   ),
   POST: new RegExp(
-    `^(?:brands|connector-types|admin/operators|stations|${station}/(?:images|connectors|reviews|reports)|vehicles-infor|blog-posts|${blogPost}/(?:submit|approve|reject))$`,
+    `^(?:brands|connector-types|admin/operators|stations|${station}/(?:images|connectors|reviews|reports)|vehicles-infor|blog-posts|${blogPost}/(?:submit|approve|reject)|vouchers|${voucher}/(?:submit|approve|reject))$`,
     "i",
   ),
   PUT: new RegExp(
-    `^(?:(?:brands|connector-types|operators|stations|connectors|reviews|vehicles-infor)/${uuid}|operators/${uuid}/allowed-brands|${blogPost})$`,
+    `^(?:(?:brands|connector-types|operators|stations|connectors|reviews|vehicles-infor)/${uuid}|operators/${uuid}/allowed-brands|${blogPost}|${voucher})$`,
     "i",
   ),
   DELETE: new RegExp(
-    `^(?:(?:brands|stations|connectors|reviews|vehicles-infor)/${uuid}|${station}/images/${uuid}|${blogPost})$`,
+    `^(?:(?:brands|stations|connectors|reviews|vehicles-infor)/${uuid}|${station}/images/${uuid}|${blogPost}|${voucher})$`,
     "i",
   ),
 };

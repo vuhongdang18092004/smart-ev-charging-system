@@ -21,6 +21,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration(proxyBeanMethods = false)
 public class SecurityConfig {
+    private static final String VOUCHERS = "/api/vouchers/**";
+    private static final String DRIVER_VOUCHERS = "/api/driver/vouchers/**";
+    private static final String USER_VOUCHERS = "/api/driver/user-vouchers/**";
+    private static final String VOUCHER_APPROVE = "/api/vouchers/*/approve";
+    private static final String VOUCHER_REJECT = "/api/vouchers/*/reject";
+    private static final String VOUCHER_SUBMIT = "/api/vouchers/*/submit";
     private static final String BLOG_MANAGEMENT = "/api/blog-posts/**";
     private static final String PUBLIC_BLOG = "/api/public/blog-posts/**";
     private static final String BLOG_APPROVE = "/api/blog-posts/*/approve";
@@ -47,9 +53,10 @@ public class SecurityConfig {
                                 "/api/auth/resend-otp", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout",
                                 "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_BLOG).permitAll()
-                        .requestMatchers(HttpMethod.POST, BLOG_APPROVE, BLOG_REJECT).hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, BLOG_SUBMIT).hasRole("OPERATOR")
-                        .requestMatchers(BLOG_MANAGEMENT).hasAnyRole("ADMIN", "OPERATOR")
+                        .requestMatchers(HttpMethod.POST, BLOG_APPROVE, BLOG_REJECT, VOUCHER_APPROVE, VOUCHER_REJECT).hasRole("ADMIN")
+                        .requestMatchers(DRIVER_VOUCHERS, USER_VOUCHERS).hasRole("DRIVER")
+                        .requestMatchers(HttpMethod.POST, BLOG_SUBMIT, VOUCHER_SUBMIT).hasRole("OPERATOR")
+                        .requestMatchers(VOUCHERS, BLOG_MANAGEMENT).hasAnyRole("ADMIN", "OPERATOR")
                         .requestMatchers("/api/auth/me").hasAnyRole("ADMIN", "OPERATOR", "DRIVER")
                         .requestMatchers(HttpMethod.POST, "/api/operators").denyAll()
                         .requestMatchers("/api/user-vehicles/**", "/api/vehicle-options").hasRole("DRIVER")
@@ -71,12 +78,13 @@ public class SecurityConfig {
         provider.setPasswordEncoder(PasswordEncoderFactories.createDelegatingPasswordEncoder());
 
         return base(http)
-                .securityMatcher(BLOG_MANAGEMENT, "/api/brands/**", "/api/vehicles-infor/**", "/api/user-vehicles/**", "/api/vehicle-options/**")
+                .securityMatcher(VOUCHERS, DRIVER_VOUCHERS, USER_VOUCHERS, BLOG_MANAGEMENT, "/api/brands/**", "/api/vehicles-infor/**", "/api/user-vehicles/**", "/api/vehicle-options/**")
                 .authenticationManager(new ProviderManager(provider))
                 .authorizeHttpRequests(rules -> rules
-                        .requestMatchers(HttpMethod.POST, BLOG_APPROVE, BLOG_REJECT).hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, BLOG_SUBMIT).hasRole("OPERATOR")
-                        .requestMatchers(BLOG_MANAGEMENT, "/api/brands/**", "/api/vehicles-infor/**").hasAnyRole("ADMIN", "OPERATOR")
+                        .requestMatchers(HttpMethod.POST, BLOG_APPROVE, BLOG_REJECT, VOUCHER_APPROVE, VOUCHER_REJECT).hasRole("ADMIN")
+                        .requestMatchers(DRIVER_VOUCHERS, USER_VOUCHERS).hasRole("DRIVER")
+                        .requestMatchers(HttpMethod.POST, BLOG_SUBMIT, VOUCHER_SUBMIT).hasRole("OPERATOR")
+                        .requestMatchers(VOUCHERS, BLOG_MANAGEMENT, "/api/brands/**", "/api/vehicles-infor/**").hasAnyRole("ADMIN", "OPERATOR")
                         .requestMatchers("/api/user-vehicles/**").hasRole(DomainValues.DRIVER_AUTHORITY)
                         .requestMatchers(HttpMethod.GET, "/api/vehicle-options").hasRole(DomainValues.DRIVER_AUTHORITY)
                         .anyRequest().denyAll())

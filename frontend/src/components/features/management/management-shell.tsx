@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { BaseButton } from "@/components/base/base-button";
+import { VOUCHER_COPY, VOUCHER_ROUTE } from "@/constants/voucher";
 import { BLOG_COPY, BLOG_ROUTE } from "@/constants/blog";
 import { COPY, ROUTES } from "@/constants/management";
 import { WEB_AUTH_COPY, WEB_AUTH_ROUTES, WEB_ROLE } from "@/constants/web-auth";
@@ -17,6 +18,7 @@ import {
 
 const navigation = [
   { href: VEHICLE_INFO_ROUTE, label: VEHICLE_INFO_COPY.title },
+  { href: VOUCHER_ROUTE, label: VOUCHER_COPY.title },
   { href: BLOG_ROUTE, label: BLOG_COPY.title },
   { href: ROUTES.stations, label: COPY.stations },
   { href: ROUTES.brands, label: COPY.brands },
@@ -32,9 +34,13 @@ export function ManagementShell({ children, user }: ManagementShellProps) {
     user.role === WEB_ROLE.admin
       ? navigation
       : navigation.filter((item) =>
-          [ROUTES.stations, ROUTES.brands, VEHICLE_INFO_ROUTE, BLOG_ROUTE].some(
-            (href) => href === item.href,
-          ),
+          [
+            ROUTES.stations,
+            ROUTES.brands,
+            VEHICLE_INFO_ROUTE,
+            BLOG_ROUTE,
+            VOUCHER_ROUTE,
+          ].some((href) => href === item.href),
         );
 
   async function signOut() {

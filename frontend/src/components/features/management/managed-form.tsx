@@ -12,6 +12,7 @@ export function ManagedForm({
   submit,
   onSuccess,
   submitLabel,
+  secondarySubmit,
   disabled,
 }: ManagedFormProps) {
   const [error, setError] = useState<string>();
@@ -21,7 +22,11 @@ export function ManagedForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting.current) return;
-    const form = new FormData(event.currentTarget);
+    const submitter =
+      event.nativeEvent instanceof SubmitEvent
+        ? event.nativeEvent.submitter
+        : null;
+    const form = new FormData(event.currentTarget, submitter);
     submitting.current = true;
     setBusy(true);
     setError(undefined);
@@ -53,7 +58,7 @@ export function ManagedForm({
           {error}
         </p>
       )}
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
         <BaseButton
           disabled={busy || disabled}
           type="submit"
@@ -61,6 +66,16 @@ export function ManagedForm({
         >
           {busy ? COPY.saving : submitLabel}
         </BaseButton>
+        {secondarySubmit && (
+          <BaseButton
+            disabled={busy || disabled}
+            type="submit"
+            name={secondarySubmit.name}
+            value={secondarySubmit.value}
+          >
+            {secondarySubmit.label}
+          </BaseButton>
+        )}
       </div>
     </form>
   );

@@ -1,6 +1,10 @@
 export const API_ENDPOINTS = {
   stations: "/stations",
   brands: "/brands",
+  vouchers: "/vouchers",
+  voucher: (id: string) => `/vouchers/${encodeURIComponent(id)}`,
+  voucherAction: (id: string, action: "submit" | "approve" | "reject") =>
+    `/vouchers/${encodeURIComponent(id)}/${action}`,
   blogPosts: "/blog-posts",
   blogPost: (id: string) => `/blog-posts/${encodeURIComponent(id)}`,
   blogPostAction: (id: string, action: "submit" | "approve" | "reject") =>
