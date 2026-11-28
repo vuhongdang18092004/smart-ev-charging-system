@@ -29,13 +29,6 @@
       "expo-router",
       "expo-secure-store",
       [
-        "expo-media-library",
-        {
-          "savePhotosPermission": "Cho phép lưu mã QR voucher vào thư viện ảnh.",
-          "granularPermissions": []
-        }
-      ],
-      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",

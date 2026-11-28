@@ -25,7 +25,6 @@ export interface ManagedFormProps extends WorkspaceProps {
   submit: (form: FormData) => Promise<unknown>;
   onSuccess: () => void;
   submitLabel: string;
-  secondarySubmit?: { label: string; name: string; value: string };
   disabled?: boolean;
 }
 export interface ResourceFeedbackProps {

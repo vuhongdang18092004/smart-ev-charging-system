@@ -4,13 +4,6 @@ public final class ErrorCodes {
     public static final String CATALOG_OWNER_REQUIRED = "error.catalog-owner-required";
     public static final String BLOG_FORBIDDEN = "error.blog-forbidden";
     public static final String BLOG_INVALID_STATUS = "error.blog-invalid-status";
-    public static final String VOUCHER_FORBIDDEN = "error.voucher-forbidden";
-    public static final String VOUCHER_INVALID_STATUS = "error.voucher-invalid-status";
-    public static final String VOUCHER_INVALID_DETAILS = "error.voucher-invalid-details";
-    public static final String VOUCHER_EXPIRED = "error.voucher-expired";
-    public static final String VOUCHER_ALREADY_CLAIMED = "error.voucher-already-claimed";
-    public static final String VOUCHER_UNAVAILABLE = "error.voucher-unavailable";
-    public static final String VOUCHER_TERMS_LOCKED = "error.voucher-terms-locked";
     public static final String CONFLICT = "error.conflict";
     public static final String DRIVER_REQUIRED = "error.driver-required";
     public static final String INVALID_VEHICLE_INFO = "error.invalid-vehicle-info";

@@ -130,8 +130,10 @@ class AuthIntegrationTests {
             UUID vehicle = jdbc.sql("insert into " + schema + ".user_vehicles(user_id,vehicle_info_id) values(?,?) returning id")
                     .params(driver, model).query(UUID.class).single();
 
-            assertEquals(4, org.flywaydb.core.Flyway.configure().dataSource(isolated).schemas(schema)
+            assertEquals(5, org.flywaydb.core.Flyway.configure().dataSource(isolated).schemas(schema)
                     .load().migrate().migrationsExecuted);
+            assertEquals(0L, jdbc.sql("select count(*) from pg_tables where schemaname=? "
+                    + "and tablename in ('vouchers', 'user_vouchers')").param(schema).query(Long.class).single());
             assertEquals(1L, jdbc.sql("select count(*) from " + schema + ".brands where id=? and created_by_user_id is null")
                     .param(brand).query(Long.class).single());
             assertEquals(1L, jdbc.sql("select count(*) from " + schema
@@ -255,90 +257,6 @@ class AuthIntegrationTests {
 
         assertEquals(201, request(management, "POST", content.formatted("PUBLISHED"), admin));
         assertEquals(200, get(published + "/blog-fixture-2", null));
-    }
-
-    @Test
-    void voucherReviewClaimQuotaAndQrReplay() throws Exception {
-        String admin = fixtureSession("admin").accessToken();
-        AuthSessionResponse operator = fixtureSession("operator");
-        AuthSessionResponse otherOperator = fixtureSession("operator");
-        String driver = fixtureSession("driver").accessToken();
-        String second = fixtureSession("driver").accessToken();
-        String third = fixtureSession("driver").accessToken();
-        UUID brand = jdbc.sql("insert into brands(name) values(?) returning id")
-                .param("Voucher Fixture " + UUID.randomUUID()).query(UUID.class).single();
-        UUID owned = station(operator.user().id(), brand);
-        UUID outside = station(otherOperator.user().id(), brand);
-        String management = "/api/vouchers";
-        String driverBase = "/api/driver/vouchers";
-        String from = java.time.Instant.now().minusSeconds(3600).toString();
-        String to = java.time.Instant.now().plusSeconds(3600).toString();
-        String body = """
-                {"station_id":"%s","code_prefix":"EVHUB","title":"Voucher Fixture",
-                "discount_type":"PERCENT","discount_value":20,"max_discount_amount":30000,
-                "total_quantity":2,"valid_from":"%s","valid_to":"%s","status":"%s"}
-                """;
-        assertEquals(403, request(management, "POST", body.formatted(outside, from, to, "DRAFT"), operator.accessToken()));
-        assertEquals(403, request(management, "POST", body.formatted(owned, from, to, "ACTIVE"), operator.accessToken()));
-        assertEquals(201, request(management, "POST", body.formatted(owned, from, to, "DRAFT"), operator.accessToken()));
-        UUID id = jdbc.sql("select id from vouchers where creator_id=?").param(operator.user().id()).query(UUID.class).single();
-        String voucher = management + "/" + id;
-        assertEquals(403, get(voucher, otherOperator.accessToken()));
-        assertEquals(403, get(voucher, driver));
-        assertEquals(200, request(voucher + "/submit", "POST", "", operator.accessToken()));
-        assertEquals(403, request(voucher + "/approve", "POST", "", otherOperator.accessToken()));
-        assertEquals(400, request(voucher + "/reject", "POST", "{}", admin));
-        assertEquals(200, request(voucher + "/reject", "POST", "{\"rejection_reason\":\"Check terms\"}", admin));
-        assertEquals(200, request(voucher + "/submit", "POST", "", operator.accessToken()));
-        assertEquals(200, request(voucher + "/approve", "POST", "", admin));
-        assertEquals(400, request(voucher + "/approve", "POST", "", admin));
-        assertEquals(403, get(driverBase + "/available", admin));
-        String available = driverBase + "/available?stationId=" + owned;
-        String open = requestBody(available, "GET", "", driver);
-        assertTrue(open.contains("\"code_prefix\":\"EVHUB\"") && open.contains("\"is_claimed\":false"), open);
-        String claim = driverBase + "/" + id + "/claim";
-        assertEquals(200, request(claim, "POST", "", driver));
-        assertEquals(409, request(claim, "POST", "", driver));
-        String received = requestBody(available, "GET", "", driver);
-        assertTrue(received.contains("\"is_claimed\":true"), received);
-        try (var executor = Executors.newFixedThreadPool(2)) {
-            var a = executor.submit(() -> request(claim, "POST", "", second));
-            var b = executor.submit(() -> request(claim, "POST", "", third));
-            assertEquals(java.util.Set.of(200, 409), java.util.Set.of(a.get(), b.get()));
-        }
-        assertEquals(2, jdbc.sql("select claimed_count from vouchers where id=?").param(id).query(Integer.class).single());
-        UUID item = jdbc.sql("""
-                select uv.id from user_vouchers uv join refresh_tokens token on token.user_id=uv.user_id
-                where uv.voucher_id=? and token.role='driver' order by uv.claimed_at limit 1
-                """).param(id).query(UUID.class).single();
-        String qr = "/api/driver/user-vouchers/" + item + "/download-qr";
-        assertEquals(404, request(qr, "POST", "", second));
-        String issued = requestBody(qr, "POST", "", driver);
-        assertTrue(issued.contains("MA VOUCHER: EVHUB-") && issued.contains("HAN THANH TOAN:") &&
-                issued.contains("\"status\":\"USED\""), issued);
-        assertEquals(issued, requestBody(qr, "POST", "", driver));
-        assertTrue(requestBody(driverBase + "/my?status=USED", "GET", "", driver).contains(item.toString()));
-        jdbc.sql("update vouchers set valid_from=now()-interval '2 days',valid_to=now()-interval '1 day' where id=?")
-                .param(id).update();
-        UUID unused = jdbc.sql("select id from user_vouchers where voucher_id=? and id<>?")
-                .params(id, item).query(UUID.class).single();
-        String expired = "/api/driver/user-vouchers/" + unused + "/download-qr";
-        int secondStatus = request(expired, "POST", "", second);
-        int thirdStatus = request(expired, "POST", "", third);
-        assertEquals(java.util.Set.of(404, 410), java.util.Set.of(secondStatus, thirdStatus));
-        assertEquals("EXPIRED", jdbc.sql("select status from user_vouchers where id=?").param(unused).query(String.class).single());
-    }
-
-    private String requestBody(String path, String method, String body, String token) throws Exception {
-        var req = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
-                .header("Authorization", "Bearer " + token).header("Content-Type", "application/json")
-                .method(method, body.isEmpty() ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(body))
-                .build();
-        try (var client = HttpClient.newHttpClient()) {
-            var response = client.send(req, HttpResponse.BodyHandlers.ofString());
-            assertEquals(200, response.statusCode(), response.body());
-            return response.body();
-        }
     }
 
     private String vehicleName(UUID id) {
